@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0,user-scalable=no"/>
+    <link rel="stylesheet" href="css/chessboard2.css">
+    <script src="js/chess.js"></script>
+    <title>MutantChess</title>
+</head>
+<body contenteditable="true">
+<div id="myBoard"></div>
+<label>Status:</label><div id="gameStatus"></div>
+<label>FEN:</label><div id="gameFEN"></div>
+<label>PGN:</label><div id="gamePGN"></div>
+<audio id="audio" controls>
+ <source src="capture.mp3">
+</audio>
+
+<script src="js/chessboard2.js"></script>
+<script>
+//custom scripts
+function $(selector){
+const elements = document.querySelectorAll(selector);
+var x;
+if(elements.length == 1){x = elements[0]}
+else{x = elements}
+return x;
+}
+
+const defaultFEN ="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+const game = new Chess(localStorage.getItem("ChessPosition") ? localStorage.getItem("ChessPosition") : defaultFEN);
+const $board = document.querySelector('#myBoard');
+const squareClass = 'squares-2dea6';
+let squareToHighlight = null;
+
+const boardConfig = {
+    draggable: true,
+    position: game.fen(),
+    pieceTheme: `img/chesspieces/wikipedia/{psiece}.png`,
+    onDragStart: onDragStart,
+    onDrop: onDrop,
+    // onSnapEnd (if needed)
+};
+
+const board = Chessboard2('myBoard', boardConfig);
+const statusEl = $('#gameStatus');
+const fenEl = $('#gameFEN');
+const pgnEl = $('#gamePGN');
+
+updateStatus();
+
+function onDragStart(dragStartEvt) {
+    // Do not pick up pieces if the game is over
+    if (game.game_over()) return false;
+
+    // Only pick up pieces for the side to move
+    if (game.turn() === 'w' && !isWhitePiece(dragStartEvt.piece)) return false;
+    if (game.turn() === 'b' && !isBlackPiece(dragStartEvt.piece)) return false;
+
+    // What moves are available from this square?
+    const legalMoves = game.moves({ square: dragStartEvt.square, verbose: true });
+
+    // Place Circles on the possible target squares
+    legalMoves.forEach((move) => {
+        board.addCircle(move.to);
+    });
+}
+
+function isWhitePiece(piece) {
+    return /^w/.test(piece);
+}
+
+function isBlackPiece(piece) {
+    return /^b/.test(piece);
+}
+
+function onDrop(dropEvt) {
+    // See if the move is legal
+    const move = game.move({
+        from: dropEvt.source,
+        to: dropEvt.target,
+        promotion: 'q' // NOTE: always promote to a queen for simplicity
+    });
+
+    // Remove all Circles from the board
+    board.clearCircles();
+
+    // Make the move if it is legal
+    if(move){
+    board.fen(game.fen(), () => {
+     updateStatus();
+    });
+    $("#audio").play();
+    localStorage.setItem("ChessPosition", game.fen());
+    localStorage.setItem("ChessTurn", game.turn());
+    squareToHighlight = move.to;
+    highlightTo();
+    $('.' + squareClass).classList.remove('highlightFrom');
+    $('.' + squareClass).querySelector(`[data-square-coord="${move.from}"]`).classList.add('highlightFrom');
+    } else {
+        return 'snapback';
+    }
+}
+
+
+function highlightTo(){
+$("*").forEach(function(element){
+element.classList.remove('highlightFrom');
+element.classList.remove('highlightTo');
+});
+$('.' + squareClass).querySelector(`[data-square-coord="${squareToHighlight}"]`).classList.add('highlightTo');
+}
+
+// Update the board position after the piece snap for castling, en passant, pawn promotion
+// function onSnapEnd () {
+//     board.position(game.fen())
+// }
+
+// Update DOM elements with the current game status
+function updateStatus(){
+    let statusHTML = '';
+    const whosTurn = game.turn() === 'w' ? 'w' : 'b';
+
+    if (!game.game_over()) {
+        if (game.in_check()) statusHTML = whosTurn + ' is in check! ';
+        statusHTML += whosTurn + ' to move.';
+    } else if (game.in_checkmate() && game.turn() === 'w') {
+        statusHTML = 'Game over: white is in checkmate. Black wins!';
+    } else if (game.in_checkmate() && game.turn() === 'b') {
+        statusHTML = 'Game over: black is in checkmate. White wins!';
+    } else if (game.in_stalemate() && game.turn() === 'w') {
+        statusHTML = 'Game is drawn. White is stalemated.';
+    } else if (game.in_stalemate() && game.turn() === 'b') {
+        statusHTML = 'Game is drawn. Black is stalemated.';
+    } else if (game.in_threefold_repetition()) {
+        statusHTML = 'Game is drawn by threefold repetition rule.';
+    } else if (game.insufficient_material()) {
+        statusHTML = 'Game is drawn by insufficient material.';
+    } else if (game.in_draw()) {
+        statusHTML = 'Game is drawn by fifty-move rule.';
+    }
+
+    statusEl.innerHTML = statusHTML;
+    fenEl.innerHTML = game.fen();
+    pgnEl.innerHTML = game.pgn();
+    game.setTurn(localStorage.getItem("ChessTurn") ? localStorage.getItem("ChessTurn") : 'w');
+}
+</script> 
+</body>
+</html>
