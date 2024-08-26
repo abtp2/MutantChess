@@ -1,0 +1,211 @@
+@import url('https://fonts.googleapis.com/css2?family=Nosifer&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&display=swap');
+@import url('../icons/icon.css');
+.nosifer-regular {
+  font-family: "Nosifer", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+.inconsolata-regular{
+  font-family: "Inconsolata", monospace;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+  font-variation-settings:
+    "wdth" 100;
+}
+
+
+
+*{
+margin: 0;
+padding: 0;
+box-sizing: border-box;
+user-select: none;
+font-family: Inconsolata;
+/* outline: 1px solid red; */
+}
+body{
+background: #000;
+--blurbg: #121212;
+--deadpool: #cf213f;
+}
+nav{
+width: 100%;
+position: sticky;
+top: 0;
+height: 65px;
+margin: 0 auto;
+background: var(--blurbg);
+z-index: 2;
+}
+header{
+width: 90%;
+max-width: 950px;
+display: flex;
+flex-direction: column;
+align-items: center;/*
+background-image: url("../img/Deadpool2.png");
+background-size: 100%;
+background-position: 100% 50%;
+background-repeat: no-repeat; */
+background: var(--blurbg);
+border: 2px solid rgba(255,255,255,0.1);
+margin: 5rem auto 0 auto;
+border-radius: 10px;
+padding: 0 0 1.5rem 0;
+}
+@media(min-width: 700px){
+header{
+flex-direction: row;
+align-items: center;
+margin: 6rem auto 0 auto;
+}}
+header #container1{
+width: 100%;
+max-width: 400px;
+padding: 0 1.5rem 1.5rem 1 5rem;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+}
+header #container1 .cloud{
+--cloud: #202020;
+width: 140px;
+height: 60px;
+padding: 10px;
+background: var(--cloud);
+position: relative;
+top: -70px;
+right: -125px;
+text-align: left;
+border-radius: 10px 10px 10px 0;
+color: #e1e1e1;
+font-size: 14px;
+line-height: 20px;
+letter-spacing: 0;
+}
+@media(max-width: 420px){
+.cloud{
+transform: scale(0.9) !important;
+right: -120px !important;
+}}
+@media(max-width: 390px){
+.cloud{
+transform: scale(0.85) !important;
+right: -110px !important;
+}}
+@media(max-width: 360px){
+.cloud{
+transform: scale(0.80) !important;
+right: -100px !important;
+}}
+@media(max-width: 330px){
+.cloud{
+transform: scale(0.78) !important;
+right: -95px !important;
+}}
+.cloud:before {
+content: "";
+width: 0px;
+height: 0px;
+position: absolute;
+border-right: 8px solid var(--cloud);
+border-left: 8px solid transparent;
+border-bottom: 8px solid var(--cloud);
+border-top: 8px solid transparent;
+left: -15px;
+bottom: 0;
+}
+header #container1 [src="img/Deadpool3.png"]{
+width: 85%;
+margin-top: -6rem;
+}
+header #container1 #chessBoard{
+width: 85%;
+touch-action: none;
+pointer-events: none;
+}
+
+
+
+
+header #container2{
+width: 100%;
+padding: 0 1.5rem;
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+justify-content: center;
+margin-top: 2rem;
+}
+header #container2 span{
+width: 100%;
+display: flex;
+flex-direction: column;
+}
+header #container2 span h1{
+font-size: 18px;
+font-weight: 50 !important;
+color: #fff;
+font-family: Nosifer;
+text-align: center;
+opacity: 0.85;
+}
+header #container2 span i{
+font-size: 14px;
+font-weight: 400;
+color: #fff;
+margin: 8px 10% 0 auto;
+}
+@media(min-width:700px){
+header #container2 span h1{
+text-align: left; 
+}}
+header #container2 div{
+width: 100%;
+display: flex;
+flex-wrap: wrap;
+align-items: center;
+justify-content: center;
+margin: 2rem auto 0 auto;
+}
+header #container2 div button{
+width: calc(50% - 12px);
+height: 60px;
+display: flex;
+align-items: center;
+justify-content: flex-start;
+font-size: 14px;
+font-weight: 600;
+background: linear-gradient(160deg, #141414, #292929);
+box-shadow: 0 3px 4px 0.1px #000;
+border: 1px solid rgba(255,255,255,0.1);
+border-radius: 10px;
+color: #e1e1e1;
+margin: 6px;
+transition: background 0.1s;
+}
+header #container2 div button i{
+font-size: 24px;
+margin: 0 12px;
+font-weight: 300 !important;
+}
+header #container2 div button:active{
+transform: translate(0,0.25em);
+}
+@media(max-width: 340px){
+header #container2 div button i{
+margin: 0 6px;
+}}
+
+
+
+
+
+
+
+
+
+
