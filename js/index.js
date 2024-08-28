@@ -3,14 +3,13 @@ const board = window.Chessboard2('chessBoard', {
 draggable: false,
 position: 'start'
 });
-let statusHTML = ['The AIs are still battling!', 'Hope you’re watching.', 'Wait for the outcome.', 'OR start your own game instead.'];
+var statusHTML = ['The AIs are still battling!', 'Hope you’re watching.', 'Wait for the outcome.', 'OR start your own game instead.'];
 updateStatus();
 function setCloud(x){
-typed.destroy();
 statusHTML = [x,"Refresh, to see AI battle."];
-typed.start()
+typed.strings = statusHTML;
+typed.start();
 }
-
 
 window.setTimeout(makeRandomMove, 800);
 function makeRandomMove(){
@@ -35,7 +34,7 @@ function updateStatus(){
   } else if (game.in_threefold_repetition()) {
     setCloud('Drawn, by threefold repetition rule.');
   } else if (game.insufficient_material()) {
-    setCloud('Drawn, by insufficient material.');
+    setCloud('Drawn, not enough material.');
   } else if (game.in_draw()) {
     setCloud('Drawn, fifty-move rule.');
   }
@@ -48,9 +47,6 @@ strings: statusHTML,
 typeSpeed: 100,
 backSpeed: 100,
 loop: true,
-onStop: function(pos, self) { prettyLog('onStop ' + pos + ' ' + self) },
-onStart: function(pos, self) { prettyLog('onStart ' + pos + ' ' + self) },
-onDestroy: function(self) { prettyLog('onDestroy ' + self) }
 });
 
 
