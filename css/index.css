@@ -34,11 +34,61 @@ nav{
 width: 100%;
 position: sticky;
 top: 0;
-height: 65px;
+height: 68px;
 margin: 0 auto;
 background: var(--blurbg);
+border-bottom: 1.5px solid rgba(255,255,255,0.1);
 z-index: 2;
+display: flex;
+align-items: center;
+padding: 0 3%;
 }
+nav #logo{
+height: 60%;
+border-radius: 4px;
+filter: brightness(85%);
+}
+nav span{
+display: flex;
+align-items: center;
+margin: 0 0 0 auto;
+}
+nav span div{
+width: 100px;
+height: 40px;
+border: 2px solid #fff;
+border-radius: 5px;
+margin-right: 8px;
+}
+nav span #user-dp{
+width: 45px;
+height: 45px;
+border: 3px solid #fff;
+border-radius: 100%;
+display: block;
+}
+nav span button{
+padding: 0 12px;
+height: 38px;
+background: rgba(255,255,255,0.07);
+color: #e1e1e1;
+border: none;
+box-shadow: 0 1px 2px 0.1px rgba(0,0,0,0.5);
+font-size: 14px;
+font-family: arial;
+border-radius: 5px;
+display: none;
+margin-left: 8px;
+}
+@media(min-width:700px){
+nav{
+width: 90%;
+max-width: 1050px;
+height: 75px;
+border-radius: 0 0 10px 10px;
+}}
+
+
 header{
 width: 90%;
 max-width: 950px;
@@ -62,7 +112,7 @@ align-items: center;
 margin: 6rem auto 0 auto;
 }}
 header #container1{
-width: 100%;
+width: 90%;
 max-width: 400px;
 padding: 0 1.5rem 1.5rem 1 5rem;
 display: flex;
@@ -127,8 +177,10 @@ width: 85%;
 touch-action: none;
 pointer-events: none;
 }
-
-
+@media(min-width:700px){
+header #container1 #chessBoard{
+width: 80%;    
+}}
 
 
 header #container2{
@@ -195,9 +247,16 @@ font-weight: 300 !important;
 header #container2 div button:active{
 transform: translate(0,0.25em);
 }
-@media(max-width: 340px){
+
+@media(max-width: 370px){
 header #container2 div button i{
-margin: 0 6px;
+font-size: 22px;
+margin: 0 10px;
+}}
+@media(max-width: 350px){
+header #container2 div button i{
+margin: 0 8px;
+font-size: 20px;
 }}
 
 

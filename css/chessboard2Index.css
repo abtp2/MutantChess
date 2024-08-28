@@ -13,7 +13,8 @@
 }
 
 .board-container-41a68 {
-  border: 4px solid #000;
+  border: 12px solid rgba(255,255,255,0.3);
+  box-shadow: 0 3px 4px 0.1px #000;
   box-sizing: border-box;
   position: relative;
   width: 100%;
@@ -21,6 +22,11 @@
   /* box-shadow: 0 0 0px 20px red; */
   border-radius: 6px;
   overflow: hidden;
+}
+
+.board-container-41a68 img{
+  width: 80% !important;
+  height: 80% !important;
 }
 
 .squares-2dea6 {
