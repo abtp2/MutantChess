@@ -1,34 +1,32 @@
 @import url('https://fonts.googleapis.com/css2?family=Nosifer&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap');
 @import url('../icons/icon.css');
 .nosifer-regular {
   font-family: "Nosifer", sans-serif;
   font-weight: 400;
   font-style: normal;
 }
-.inconsolata-regular{
-  font-family: "Inconsolata", monospace;
-  font-optical-sizing: auto;
+.lato-regular {
+  font-family: "Lato", sans-serif;
   font-weight: 400;
   font-style: normal;
-  font-variation-settings:
-    "wdth" 100;
 }
-
-
 
 *{
 margin: 0;
 padding: 0;
 box-sizing: border-box;
 user-select: none;
-font-family: Inconsolata;
+font-family: Lato;
 /* outline: 1px solid red; */
 }
 body{
 background: #000;
 --blurbg: #121212;
---deadpool: #cf213f;
+--deadpool: #dc133d;
+}
+img{
+pointer-events: none !important;
 }
 nav{
 width: 100%;
@@ -44,9 +42,9 @@ align-items: center;
 padding: 0 3%;
 }
 nav #logo{
-height: 60%;
+height: 75%;
 border-radius: 4px;
-filter: brightness(85%);
+filter: brightness(95%);
 }
 nav span{
 display: flex;
@@ -65,7 +63,7 @@ width: 45px;
 height: 45px;
 border: 3px solid #fff;
 border-radius: 100%;
-display: block;
+display: none;
 }
 nav span button{
 padding: 0 12px;
@@ -75,10 +73,14 @@ color: #e1e1e1;
 border: none;
 box-shadow: 0 1px 2px 0.1px rgba(0,0,0,0.5);
 font-size: 14px;
-font-family: arial;
 border-radius: 5px;
-display: none;
+display: block;
 margin-left: 8px;
+white-space: nowrap;
+}
+nav span button:nth-of-type(2){
+background: rgba(255,255,255,0.2);
+color: #fff;
 }
 @media(min-width:700px){
 nav{
@@ -94,11 +96,7 @@ width: 90%;
 max-width: 950px;
 display: flex;
 flex-direction: column;
-align-items: center;/*
-background-image: url("../img/Deadpool2.png");
-background-size: 100%;
-background-position: 100% 50%;
-background-repeat: no-repeat; */
+align-items: center;
 background: var(--blurbg);
 border: 2px solid rgba(255,255,255,0.1);
 margin: 5rem auto 0 auto;
@@ -229,8 +227,8 @@ height: 60px;
 display: flex;
 align-items: center;
 justify-content: flex-start;
-font-size: 14px;
-font-weight: 600;
+font-size: 13px;
+font-weight: 500;
 background: linear-gradient(160deg, #141414, #292929);
 box-shadow: 0 3px 4px 0.1px #000;
 border: 1px solid rgba(255,255,255,0.1);
@@ -255,7 +253,7 @@ margin: 0 10px;
 }}
 @media(max-width: 350px){
 header #container2 div button i{
-margin: 0 8px;
+margin: 0 4px 0 8px;
 font-size: 20px;
 }}
 
