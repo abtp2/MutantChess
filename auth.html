@@ -3,18 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <title>MutantChess</title>
 </head>
 <body>
+<div id="loader"></div>
 <main>
- <img src="img/Deadpool4.png" id="deadpool">
+ <div id="alert"><i class="gw-icon">error</i><h5>Password verified successfully.</h5><i class="gw-icon">close</i></div>
  <div id="login-box" class="box">
   <h1>Login</h1>     
   <form action="index.html">
   <span><i class="gw-icon">mail</i><input type="email" placeholder="Email" required></span>
-  <span><i class="gw-icon">lock</i><input type="password" placeholder="Password" required><i class="gw-icon">visibility</i></span>
+  <span><i class="gw-icon">lock</i><input type="password" placeholder="Password" maxlength="10" required><i class="gw-icon">visibility</i></span>
   <h3>Forget password?</h3>
-  <button type="submit">Login</button>
+  <button type="submit" class="submit-but">Login</button>
+  <h4>OR</h4>
   <div><img src="img/Gicon.png"><h2>Continue with Google</h2></div>
   </form>
   <p>Don't have an account?<span>Signup</span></p>
@@ -23,9 +26,10 @@
   <h1>Signup</h1>     
   <form action="index.html">
   <span><i class="gw-icon">mail</i><input type="email" placeholder="Email" required></span>
-  <span><i class="gw-icon">lock</i><input type="password" placeholder="Set Password" required><i class="gw-icon">visibility</i></span>
-  <span><i class="gw-icon">lock</i><input type="password" placeholder="Confirm Password" required><i class="gw-icon">visibility</i></span>
-  <button type="submit">Signup</button>
+  <span><i class="gw-icon">pin</i><input type="number" placeholder="Enter OTP" maxlength="6" required><button type="button" id="getOtp">Get OTP<i></i></button><button type="button" id="verifyOtp">Verify OTP<i></i></button></span>
+  <span><i class="gw-icon">lock</i><input type="password" placeholder="Set Password" maxlength="10" required><i class="gw-icon">visibility</i></span>
+  <button type="submit" class="submit-but">Signup</button>
+  <h4>OR</h4>
   <div><img src="img/Gicon.png"><h2>Continue with Google</h2></div>
   </form>
   <p>Already have an account?<span>Login</span></p>
@@ -33,9 +37,8 @@
 </main>
 
 <style>
-@import url('../icons/icon.css');
+@import url('icons/icon.css');
 @import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap');
-@import url('../icons/icon.css');
 .lato-regular {
   font-family: "Lato", sans-serif;
   font-weight: 400;
@@ -56,11 +59,25 @@ background: #000;
 --deadpool: #dc133d;
 color: #fff;
 }
+#loader{
+width: 100%;
+height: 100vh;
+position: absolute; 
+top: 0;
+left: 0;
+z-index: 99;
+background: #000;
+}
 img{
 pointer-events: none !important; 
 }
+@keyframes spin{
+0%{transform: rotate(0deg)}
+100%{transform: rotate(360deg)}
+}
 main{
-width: 100%;
+width: 85%;
+max-width: 400px;
 display: flex;
 flex-direction: column;
 position: absolute;
@@ -68,21 +85,59 @@ transform: translate(-50%,-50%);
 left: 50%;
 top: 50%;
 }
-main #deadpool{
-width: 50%;
-max-width: 400px;
-margin: 0 auto;
-display: none; 
+main #alert{
+width: 99%;
+height: 48px; 
+display: flex; 
+align-items: center;
+background: transparent;
+--red: 220,19,61;
+--green: 40,167,69;
+--alertColor: var(--green);
+outline: 2px solid rgba(var(--alertColor),0.4);
+margin: 0 auto 10px auto;
+border-radius: 6px;
+transition: all 0.2s;
+position: relative;
+top: 100px;
+}
+main #alert i:nth-of-type(1){
+height: 100%;
+font-size: 22px;
+padding: 0 10px;
+color: rgba(var(--alertColor));
+display: flex; 
+align-items: center;
+}
+main #alert i:nth-of-type(2){
+height: 100%;
+font-size: 24px;
+padding: 0 12px;
+background: #000;
+display: flex; 
+align-items: center;
+background: rgba(255,255,255,0.05);
+}
+main #alert h5{
+width: 100%;
+height: 100%;
+display: flex; 
+align-items: center;
+font-size: 14px; 
+font-weight: 400;
+line-height: 1.4; 
+padding: 0 4px;
+opacity: 0.8; 
 }
 .box{
-width: 85%;
-max-width: 400px;
+width: 100%;
 margin: 0 auto;
 background: var(--blurbg);
 padding: 25px;
 display: flex;
 flex-direction: column;
 border: 1.8px solid rgba(255,255,255,0.1);
+z-index: 2;
 }
 .box h1{
 font-size: 20px;
@@ -123,8 +178,41 @@ padding: 0 5px;
 color: #fff;
 font-size: 15px;
 }
+.box form span input[type="number"]{
+letter-spacing: 2px;
+}
+.box form span input[type="number"]::placeholder{
+letter-spacing: normal;
+}
 .box form span:focus-within{
 border-bottom: 1px solid var(--deadpool);
+}
+.box form span button{
+max-width: 66%;
+padding: 9px 10px;
+white-space: nowrap; 
+background: rgba(255,255,255,0.1);
+color: #e1e1e1;
+border: 1px solid rgba(255,255,255,0.2);
+border-radius: 5px;
+font-size: 13px;
+display: flex; 
+align-items: center; 
+}
+.box form span button i.gw-icon{
+font-size: 18px;
+margin-left: 2px;
+}
+.loader_dotted{
+width: 16px;
+height: 16px;
+border: 3px dotted #e1e1e1;
+border-radius: 100%;
+margin-left: 5px;
+animation: spin 0.8s linear infinite;
+}
+#verifyOtp{
+display: none;
 }
 .box form h3{
 font-size: 14px;
@@ -135,7 +223,7 @@ margin-top: 2px;
 .box form h3:active{
 text-decoration: underline;
 }
-.box form button{
+.box form .submit-but{
 width: 100%;
 height: 45px;
 background: var(--deadpool);
@@ -149,9 +237,20 @@ display: flex;
 align-items: center;
 justify-content: center;
 }
-.box form button i{
+.box form .submit-but i{
 margin-right: 8px;
 font-size: 22px;
+}
+.box form .submit-but:hover{
+outline: 4px solid rgba(220,19,61,0.4);
+}
+.box form h4{
+width: 100%;
+text-align: center; 
+margin: 10px auto;
+font-size: 14px;
+color #fff;
+opacity: 0.8;
 }
 .box form div{
 width: 100%;
@@ -162,7 +261,6 @@ justify-content: center;
 padding: 0 5px;
 background: transparent;
 border: 1px solid rgba(255,255,255,0.3);
-margin-top: 14px;
 border-radius: 6px;
 position: relative;
 }
@@ -211,24 +309,44 @@ if(elements.length == 1){x = elements[0]}
 else{x = elements}
 return x;
 }
+window.addEventListener("load",function(){
+$("#loader").style.display ="none";
+});
 
-$("#login-box p span").onclick = function(){
+//reset login box
+function resetLoginBox(){
 $("#login-box form").reset();
 $("#login-box form span i:nth-of-type(2)").parentElement.querySelector("input").type ="password";
 $("#login-box form span i:nth-of-type(2)").innerHTML = "visibility";
+}
+//reset signup box
+function resetSignupBox(){
+$("#signUp-box form").reset();
+$("#signUp-box form span i:nth-of-type(2)").parentElement.querySelector("input").type ="password";
+$("#signUp-box form span i:nth-of-type(2)").innerHTML = "visibility";
+isOtpSent = false;
+isUserVerified = false;
+clearInterval(otpInterval);
+$("#getOtp").innerHTML ='Get OTP<i></i>';
+$("#getOtp i").classList.remove("loader_dotted")
+$("#getOtp i").classList.remove("gw-icon");
+$("#getOtp").style.opacity = "1";
+$("#getOtp").removeAttribute("disabled");
+}
+
+// reset login and signup box
+$("#login-box p span").onclick = function(){
+resetLoginBox();
 $("#login-box").style.display ="none";
 $("#signUp-box").style.display ="block";
 }
 $("#signUp-box p span").onclick = function(){
-$("#signUp-box form").reset();
-$("#signUp-box form span i:nth-of-type(2)").forEach(function(icon){
-icon.parentElement.querySelector("input").type ="password";
-icon.innerHTML = "visibility";
-});
+resetSignupBox();
 $("#signUp-box").style.display ="none";
 $("#login-box").style.display ="block";
 }
 
+//hide and show password
 $(".box form span i:nth-of-type(2)").forEach(function(icon){
 icon.onclick = function(){
 var input = icon.parentElement.querySelector("input");
@@ -243,6 +361,169 @@ icon.innerHTML = "visibility";
 input.focus();
 }
 }});
+
+//Show Alert
+var alertInterval;
+function showAlert(x,y){
+color = x=="error" ? "var(--red)" : "var(--green)";
+$("#alert h5").innerHTML = y;
+$("#alert").style.setProperty("--alertColor", color);
+$("#alert i:nth-of-type(1)").innerHTML = x=="error" ? "error" : "check_circle";
+$("#alert").style.top ="0px";
+alertInterval = setTimeout(()=>{$("#alert").style.top ="100px";}, 2500);
+}
+//hide Alert
+$("#alert i:nth-of-type(2)").onclick =()=>{
+$("#alert").style.top ="100px";
+clearTimeout(alertInterval);
+}
+
+
+
+//Supabase start
+const supabaseUrl ="https://bsblowjukqjtsnbzqqxs.supabase.co";
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzYmxvd2p1a3FqdHNuYnpxcXhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjUxMTYyNzEsImV4cCI6MjA0MDY5MjI3MX0.QCZRqjKzOxu4TP9pgJfIo-cpiAIGBNgqWzHCOi1cGdo';
+const sb = supabase.createClient(supabaseUrl, supabaseKey);
+
+
+//Number validation
+function isEmailValid(email){
+const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+return emailPattern.test(email);
+}
+//Password validation
+function isPasswordValid(password){
+const regex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)[A-Za-z\d_]{8,}$/;
+return regex.test(password);
+} 
+//otp validation
+function isOtpValid(otp){
+const OtpPattern = /^\d{6}$/;
+return OtpPattern.test(otp); 
+}
+//Max length of input
+$(".box span input").forEach(input => {
+input.addEventListener('input',function(){
+const maxLength = input.getAttribute("maxlength") ? input.getAttribute("maxlength") : 99;
+if(input.value.length > maxLength){
+input.value = input.value.substring(0, maxLength);
+}})});
+
+//New otp timer
+var otpInterval;
+function newOtpTimer(){
+let countdown = 60;
+const element = $("#getOtp"); 
+otpInterval = setInterval(() => {
+ element.innerHTML = `New OTP ${countdown}s`;
+ if(countdown-- <= 0){
+  clearInterval(otpInterval);
+  element.innerHTML ='Get OTP<i></i>';
+  $("#getOtp i").classList.remove("loader_dotted")
+  $("#getOtp i").classList.remove("gw-icon");
+  element.style.opacity = "1";
+  element.removeAttribute("disabled");
+ } 
+}, 1000);
+}
+//show verifyOtp button
+var isOtpSent = false;
+$("#signUp-box span input[type='number']").addEventListener("input",function(){
+if(this.value.length == 6 && isOtpSent){
+$("#getOtp").style.display ="none";
+$("#verifyOtp").style.display ="flex";
+$("#verifyOtp").style.opacity = "1";
+$("#verifyOtp").removeAttribute("disabled");
+$("#verifyOtp i").classList.remove("loader_dotted");
+$("#verifyOtp i").classList.remove("gw-icon");
+$("#verifyOtp").innerHTML ="Verify OTP<i></i>";
+}else{
+$("#getOtp").style.display ="flex";
+$("#verifyOtp").style.display ="none";
+}});
+
+
+
+/* MAIN FUNCTIONS */
+let AuthEvent;
+const {data} = sb.auth.onAuthStateChange((event, session) =>{
+//console.log(event, session);
+AuthEvent = event; 
+});
+
+
+async function getOtp(email){
+try{
+    const { data, error } = await sb.auth.signInWithOtp({ email: email });
+    if (error) throw error;
+    isOtpSent = true;
+    showAlert("success", `OTP sent: ${email}`);
+    $("#getOtp").innerHTML ="OTP sent<i>check_circle</i>";
+    $("#getOtp i").classList.remove("loader_dotted");
+    $("#getOtp i").classList.add("gw-icon");
+    $("#getOtp").style.opacity = "0.4";
+    $("#getOtp").setAttribute("disabled", "true");
+    setTimeout(newOtpTimer, 1500);
+}catch(error){
+    showAlert("error", `Error: ${error.message}`);
+    $("#getOtp").innerHTML ="OTP not sent<i>error</i>";
+    $("#getOtp i").classList.remove("loader_dotted");
+    $("#getOtp i").classList.add("gw-icon");
+    $("#getOtp").style.opacity = "0.4";
+    $("#getOtp").setAttribute("disabled", "true");
+}}
+var isUserVerified = false;
+async function verifyOtp(email, otp){
+try{
+    const { data, error } = await sb.auth.verifyOtp({ email: email, token: otp, type: 'email' });
+    if (error) throw error;
+    showAlert("success", "OTP verified successfully");
+    $("#verifyOtp").innerHTML ="OTP verified<i>check_circle</i>";
+    $("#verifyOtp i").classList.remove("loader_dotted");
+    $("#verifyOtp i").classList.add("gw-icon");
+    $("#verifyOtp").style.opacity = "0.4";
+    $("#verifyOtp").setAttribute("disabled", "true");
+    $("#signUp-box span input[type='number']").setAttribute("disabled","true")
+    isUserVerified = true;
+}catch(error){
+    showAlert("error", "OTP is Invalid or Expired");
+    $("#verifyOtp").innerHTML ="OTP invalid<i>error</i>";
+    $("#verifyOtp i").classList.remove("loader_dotted");
+    $("#verifyOtp i").classList.add("gw-icon");    
+    $("#verifyOtp").style.opacity = "0.4";
+    $("#verifyOtp").setAttribute("disabled", "true");
+}}
+
+//getOtp
+$("#getOtp").onclick = function(){
+const email = $("#signUp-box span input[type='email']").value;
+if(isEmailValid(email)){
+$("#getOtp").style.opacity = "0.4";
+$("#getOtp").setAttribute("disabled", "true");
+$("#getOtp").innerHTML ="Sending OTP<i></i>";
+$("#getOtp i").classList.remove("gw-icon");
+$("#getOtp i").classList.add("loader_dotted");
+getOtp(email);
+}
+else{
+showAlert("error", "Check Email Properly.")  
+}}
+
+//verifyOtp 
+$("#verifyOtp").onclick = function(){
+const email = $("#signUp-box span input[type='email']").value;
+const otp = $("#signUp-box span input[type='number']").value;
+if(isOtpValid(otp)){
+$("#verifyOtp").style.opacity = "0.4";
+$("#verifyOtp").setAttribute("disabled", "true");
+$("#verifyOtp").innerHTML ="Verifying<i></i>";
+$("#verifyOtp i").classList.remove("gw-icon");
+$("#verifyOtp i").classList.add("loader_dotted");
+verifyOtp(email,otp);
+}
+else{
+showAlert("error", "Check OTP Properly.")  
+}}
 </script>
 </body>
 </html>
