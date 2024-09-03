@@ -1,3 +1,15 @@
+//custom scripts
+function $(selector){
+const elements = document.querySelectorAll(selector);
+var x;
+if(elements.length == 1){x = elements[0]}
+else{x = elements}
+return x;
+}
+window.addEventListener("load",function(){
+$("#loader").style.display ="none";
+});
+
 const game = new window.Chess();
 const board = window.Chessboard2('chessBoard', {
 draggable: false,
@@ -47,6 +59,19 @@ strings: statusHTML,
 typeSpeed: 100,
 backSpeed: 100,
 loop: true,
+});
+
+
+// Menu
+$("nav span:nth-of-type(1) #menuBtn").addEventListener("click", (event) => {
+const div = $("nav span:nth-of-type(1) div");
+div.classList.toggle("menu-open");
+});
+document.addEventListener("click",function(event){
+const menu = $("nav span:nth-of-type(1)");
+if(!menu.contains(event.target)){
+menu.querySelector("div").classList.remove("menu-open")
+}    
 });
 
 
