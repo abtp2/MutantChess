@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="theme-color" content="#000000">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <title>MutantChess</title>
 </head>
@@ -87,14 +88,14 @@ top: 50%;
 }
 main #alert{
 width: 99%;
-height: 48px; 
+height: 50px; 
 display: flex; 
 align-items: center;
-background: transparent;
+background: rgba(255,255,255,0.05);
 --red: 220,19,61;
 --green: 40,167,69;
 --alertColor: var(--green);
-outline: 2px solid rgba(var(--alertColor),0.4);
+border-bottom: 4px solid rgba(var(--alertColor),0.5);
 margin: 0 auto 10px auto;
 border-radius: 6px;
 transition: all 0.2s;
@@ -113,10 +114,8 @@ main #alert i:nth-of-type(2){
 height: 100%;
 font-size: 24px;
 padding: 0 12px;
-background: #000;
 display: flex; 
 align-items: center;
-background: rgba(255,255,255,0.05);
 }
 main #alert h5{
 width: 100%;

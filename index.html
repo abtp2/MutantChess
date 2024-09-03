@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="theme-color" content="#000000">
+    <!-- Importing Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Nosifer&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/index.css">
     <link rel="stylesheet" href="css/chessboard2Index.css">
     <script src="js/chess.js"></script>
@@ -10,8 +14,17 @@
     <title>MutantChess</title>
 </head>
 <body>
+<div id="loader"></div>
 <nav>
- <img src="img/logo.png" alt="" id="logo">
+ <span>
+  <i id="menuBtn"></i>
+  <div>
+   <p><i class="gw-icon">person</i>About Us</p>
+   <p><i class="gw-icon">logout</i>Log Out</p>
+   <p><i class="gw-icon">settings</i> Settings</p>
+  </div>
+  <img src="img/logo.png" alt="">  
+ </span>
  <span>
   <img src="img/user.png" alt="" id="user-dp">
   <button>Log In</button>
