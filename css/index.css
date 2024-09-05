@@ -19,8 +19,10 @@ font-family: Lato;
 /* outline: 1px solid red; */
 }
 body{
-background: #000;
---blurbg: #121212;
+--bg: #0d1017;
+background: var(--bg);
+--blurbg: #1b1e25;
+--blurbgrgb: 36,41,47;
 --deadpool: #dc133d;
 }
 img{
@@ -56,44 +58,55 @@ position: relative;
 }
 nav span:nth-of-type(1) #menuBtn{
 width: 30px;
+}
+nav span:nth-of-type(1) #menuBtn p{
+width: 24px;
 height: 2.5px;
 background: #e1e1e1;
 position: relative;
 font-style: normal !important;
+transition: width 0.1s;
 }
-nav span:nth-of-type(1) #menuBtn::after , nav span:nth-of-type(1) #menuBtn::before{
+nav span:nth-of-type(1) #menuBtn p::after , nav span:nth-of-type(1) #menuBtn p::before{
 content: "";
+width: 28px;
 height: inherit;
 background: #e1e1e1;
 position: absolute;
 left: 0;
 }
-nav span:nth-of-type(1) #menuBtn::after{
-width: 80%;
+nav span:nth-of-type(1) #menuBtn p::after{
+/* width: 80%; */
 top: 8px;
-}nav span:nth-of-type(1) #menuBtn::before{
-width: 90%;
+}nav span:nth-of-type(1) #menuBtn p::before{
+/* width: 90%; */
 bottom: 8px;
 }
 nav span:nth-of-type(1) div{
 width: 220px;
---menubg: #bdbdbd;
+--menubg: #1b1e23;
 --borderR: 5px;
+background: var(--menubg);
 position: absolute;
 top: 60px;
-left: -5px;
+left: 0px;
 z-index: 1;
 border-radius: var(--borderR);
-box-shadow: 2px 2px 10px 2px rgba(0,0,0,0.8);
+box-shadow: 2px 2px 5px 1px rgba(0,0,0,0.8);
+border: 1.2px solid #686868;
 transform-origin: left top;
 opacity: 0;
 transform: scale(0);
 transition: all 0.1s;
 }
-.menu-open{
+.menu-open div{
 opacity: 1 !important;
 transform: scale(1) !important;
 }
+.menu-open #menuBtn p{
+width: 28px !important;
+}
+/*
 nav span:nth-of-type(1) div::after{
 content: "";
 width: 0px;
@@ -106,11 +119,12 @@ border-left: 10px solid transparent;
 left: 10px;
 top: -19px;
 z-index: -5;
-}
+}*/
 nav span:nth-of-type(1) div p{
 width: 100%;
-padding: 10px 8px;
-color: #000;
+padding: 14px 10px;
+color: #fff;
+opacity: 0.85;
 background: var(--menubg);
 display: flex;
 align-items: center;
@@ -125,8 +139,7 @@ nav span:nth-of-type(1) div p:last-of-type{
 border-radius: 0 0 var(--borderR) var(--borderR);
 }
 nav span:nth-of-type(1) div p:active{
-color: #fff;
-background: #535353;
+background: rgba(var(--blurbgrgb),0.8);
 }
 nav span:nth-of-type(1) div p i{
 opacity: 0.8;
@@ -137,7 +150,7 @@ margin-right: 5px;
 nav span:nth-of-type(1) img{
 width: 55px;
 height: 50%;
-margin-left: 12px;
+margin-left: 1rem;
 border-radius: 5px;
 overflow: hidden;
 filter: brightness(95%);
@@ -150,8 +163,7 @@ margin: 0 0 0 auto;
 nav span:nth-of-type(2) div{
 width: 100px;
 height: 40px;
-border: 2px solid #fff;
-border-radius: 5px;
+border-radius: 6px;
 margin-right: 8px;
 }
 nav span:nth-of-type(2) #user-dp{
@@ -177,6 +189,7 @@ white-space: nowrap;
 nav span:nth-of-type(2) button:nth-of-type(2){
 background: rgba(255,255,255,0.2);
 color: #fff;
+border: none;
 }
 @media(min-width:700px){
 nav{
@@ -215,7 +228,7 @@ align-items: center;
 justify-content: center;
 }
 header #container1 .cloud{
---cloud: #202020;
+--cloud: #1b1e23;
 width: 140px;
 height: 60px;
 padding: 10px;
@@ -325,13 +338,14 @@ align-items: center;
 justify-content: flex-start;
 font-size: 13px;
 font-weight: 500;
-background: linear-gradient(160deg, #141414, #292929);
-box-shadow: 0 3px 4px 0.1px #000;
-border: 1px solid rgba(255,255,255,0.1);
+background: linear-gradient(160deg,rgba(var(--blurbgrgb),0.8),rgba(255,255,255,0.1));
+box-shadow: 0 3px 3px 0.1px #000;
+border: 1.5px solid #ffffff1a;
 border-radius: 10px;
 color: #e1e1e1;
 margin: 6px;
 transition: background 0.1s;
+overflow: hidden;
 }
 header #container2 div button i{
 font-size: 24px;
