@@ -64,13 +64,13 @@ loop: true,
 
 // Menu
 $("nav span:nth-of-type(1) #menuBtn").addEventListener("click", (event) => {
-const div = $("nav span:nth-of-type(1) div");
+const div = $("nav span:nth-of-type(1)");
 div.classList.toggle("menu-open");
 });
 document.addEventListener("click",function(event){
 const menu = $("nav span:nth-of-type(1)");
 if(!menu.contains(event.target)){
-menu.querySelector("div").classList.remove("menu-open")
+menu.classList.remove("menu-open")
 }    
 });
 
