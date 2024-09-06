@@ -6,7 +6,15 @@ if(elements.length == 1){x = elements[0]}
 else{x = elements}
 return x;
 }
+function goTo(x){window.location = x;}
 window.addEventListener("load",function(){
+if(localStorage.getItem("sb-bsblowjukqjtsnbzqqxs-auth-token")){
+$("nav span:nth-of-type(2) button").forEach((btn)=>{btn.style.display ="none"});
+$("nav span:nth-of-type(2) img").style.display ="block";
+}else{
+$("nav span:nth-of-type(2) button").forEach((btn)=>{btn.style.display ="block"});
+$("nav span:nth-of-type(2) img").style.display ="none";
+}
 $("#loader").style.display ="none";
 });
 
@@ -69,9 +77,8 @@ div.classList.toggle("menu-open");
 });
 document.addEventListener("click",function(event){
 const menu = $("nav span:nth-of-type(1)");
-if(!menu.contains(event.target)){
-menu.classList.remove("menu-open")
-}    
-});
+if(!menu.querySelector("#menuBtn").contains(event.target)){
+setTimeout(()=>{menu.classList.remove("menu-open")},100);
+}});
 
 
