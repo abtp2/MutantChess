@@ -8,34 +8,6 @@
     <title>MutantChess</title>
 </head>
 <body>
-<div id="loader"></div>
-<main>
- <div id="alert"><i class="gw-icon">error</i><h5>Password verified successfully.</h5><i class="gw-icon">close</i></div>
- <div id="login-box" class="box">
-  <h1>Login</h1>     
-  <form action="index.html">
-  <span><i class="gw-icon">mail</i><input type="email" placeholder="Email" required></span>
-  <span><i class="gw-icon">lock</i><input type="password" placeholder="Password" maxlength="10" required><i class="gw-icon">visibility</i></span>
-  <h3>Forget password?</h3>
-  <button type="submit" class="submit-but">Login</button>
-  <h4>OR</h4>
-  <div><img src="img/Gicon.png"><h2>Continue with Google</h2></div>
-  </form>
-  <p>Don't have an account?<span>Signup</span></p>
- </div><!-- Login div end -->
- <div id="signUp-box" class="box">
-  <h1>Signup</h1>     
-  <form action="index.html">
-  <span><i class="gw-icon">mail</i><input type="email" placeholder="Email" required></span>
-  <span><i class="gw-icon">pin</i><input type="number" placeholder="Enter OTP" maxlength="6" required><button type="button" id="getOtp">Get OTP<i></i></button><button type="button" id="verifyOtp">Verify OTP<i></i></button></span>
-  <span><i class="gw-icon">lock</i><input type="password" placeholder="Set Password" maxlength="10" required><i class="gw-icon">visibility</i></span>
-  <button type="submit" class="submit-but">Signup</button>
-  <h4>OR</h4>
-  <div><img src="img/Gicon.png"><h2>Continue with Google</h2></div>
-  </form>
-  <p>Already have an account?<span>Login</span></p>
- </div><!-- Signup div end-->
-</main>
 
 <style>
 @import url('icons/icon.css');
@@ -119,14 +91,17 @@ align-items: center;
 }
 main #alert h5{
 width: 100%;
-height: 100%;
-display: flex; 
+display: inline-block;
 align-items: center;
 font-size: 14px; 
 font-weight: 400;
 line-height: 1.4; 
 padding: 0 4px;
 opacity: 0.8; 
+float: left; 
+overflow: hidden;
+white-space: nowrap;
+text-overflow: ellipsis !important;
 }
 .box{
 width: 100%;
@@ -205,7 +180,7 @@ margin-left: 2px;
 .loader_dotted{
 width: 16px;
 height: 16px;
-border: 3px dotted #e1e1e1;
+border: 3px dashed #e1e1e1;
 border-radius: 100%;
 margin-left: 5px;
 animation: spin 0.8s linear infinite;
@@ -237,8 +212,10 @@ align-items: center;
 justify-content: center;
 }
 .box form .submit-but i{
-margin-right: 8px;
-font-size: 22px;
+margin-left: 5px;
+margin-bottom: -3.4px !important;
+font-size: 20px;
+font-weight: 500;
 }
 .box form .submit-but:hover{
 outline: 4px solid rgba(220,19,61,0.4);
@@ -299,6 +276,34 @@ display: block;
 display: none;
 }
 </style>
+<div id="loader"></div>
+<main>
+ <div id="alert"><i class="gw-icon">error</i><h5>Hello World!</h5><i class="gw-icon">close</i></div>
+ <div id="login-box" class="box">
+  <h1>Login</h1>     
+  <form id="login-form">
+  <span><i class="gw-icon">mail</i><input type="email" placeholder="Email" required></span>
+  <span><i class="gw-icon">lock</i><input type="password" placeholder="Password" maxlength="10" required><i class="gw-icon">visibility</i></span>
+  <h3>Forget password?</h3>
+  <button type="submit" class="submit-but">Login<i class="gw-icon">start</i></button>
+  <h4>OR</h4>
+  <div><img src="img/Gicon.png"><h2>Continue with Google</h2></div>
+  </form>
+  <p>Don't have an account?<span>Signup</span></p>
+ </div><!-- Login div end -->
+ <div id="signUp-box" class="box">
+  <h1>Signup</h1>     
+  <form id="signUp-form">
+  <span><i class="gw-icon">mail</i><input type="email" placeholder="Email" required></span>
+  <span><i class="gw-icon">pin</i><input type="number" placeholder="Enter OTP" maxlength="6" required><button type="button" id="getOtp">Get OTP<i></i></button><button type="button" id="verifyOtp">Verify OTP<i></i></button></span>
+  <span><i class="gw-icon">lock</i><input type="password" placeholder="Set Password" maxlength="10" required><i class="gw-icon">visibility</i></span>
+  <button type="submit" class="submit-but">Signup<i class="gw-icon">start</i></button>
+  <h4>OR</h4>
+  <div><img src="img/Gicon.png"><h2>Continue with Google</h2></div>
+  </form>
+  <p>Already have an account?<span>Login</span></p>
+ </div><!-- Signup div end-->
+</main>
 <script>
 //custom scripts
 function $(selector){
@@ -308,9 +313,22 @@ if(elements.length == 1){x = elements[0]}
 else{x = elements}
 return x;
 }
+function goTo(x){window.location = x;}
 window.addEventListener("load",function(){
+if(localStorage.getItem("sb-bsblowjukqjtsnbzqqxs-auth-token")){
+window.location.href ="index.html";    
+}else{
 $("#loader").style.display ="none";
-});
+  const urlParams = new URLSearchParams(window.location.search);
+  const searchQuery = urlParams.get('q');
+  if(searchQuery =="signup"){
+   $("#login-box").style.display ="none";
+   $("#signUp-box").style.display ="block";
+  }else{
+   $("#signUp-box").style.display ="none";
+   $("#login-box").style.display ="block";
+  }
+}});
 
 //reset login box
 function resetLoginBox(){
@@ -363,13 +381,14 @@ input.focus();
 
 //Show Alert
 var alertInterval;
-function showAlert(x,y){
+function showAlert(x,y,z){
+var z = z ? z : 2500
 color = x=="error" ? "var(--red)" : "var(--green)";
 $("#alert h5").innerHTML = y;
 $("#alert").style.setProperty("--alertColor", color);
 $("#alert i:nth-of-type(1)").innerHTML = x=="error" ? "error" : "check_circle";
 $("#alert").style.top ="0px";
-alertInterval = setTimeout(()=>{$("#alert").style.top ="100px";}, 2500);
+alertInterval = setTimeout(()=>{$("#alert").style.top ="100px";}, z);
 }
 //hide Alert
 $("#alert i:nth-of-type(2)").onclick =()=>{
@@ -392,7 +411,7 @@ return emailPattern.test(email);
 }
 //Password validation
 function isPasswordValid(password){
-const regex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)[A-Za-z\d_]{8,}$/;
+const regex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)[A-Za-z\d_]{10,}$/;
 return regex.test(password);
 } 
 //otp validation
@@ -505,7 +524,7 @@ $("#getOtp i").classList.add("loader_dotted");
 getOtp(email);
 }
 else{
-showAlert("error", "Check Email Properly.")  
+showAlert("error", "Email is Invalid.")  
 }}
 
 //verifyOtp 
@@ -523,6 +542,110 @@ verifyOtp(email,otp);
 else{
 showAlert("error", "Check OTP Properly.")  
 }}
+
+//Check verified
+var uuid;
+async function checkVerified(){
+try{
+ const{data: {user},error}= await sb.auth.getUser();
+ if(error){
+ console.log('Error fetching user:', error);
+ return;
+ }
+ if(user && user.user_metadata.hasPassword){
+ console.log('User ID:', user.id);
+ console.log("has Password:", user.user_metadata.hasPassword);
+ console.log(JSON.stringify(user));
+ uuid = user.id;
+ return true;
+ }else{
+ //console.log('No user is currently authenticated');
+ return false;
+ }
+}catch(error){
+ console.error('Unexpected error:', error);
+}}
+
+//Signup 
+async function signUp(password){
+var button = $("#signUpBut");
+var check = await checkVerified();
+try{
+const{data, error} = await sb.auth.updateUser({
+password: password,
+data: { hasPassword: true, }
+});
+x = check == true ? "User Details updated successfully." : "Signed Up successfully."
+//console.log(JSON.stringify(data));
+showAlert("success",x);
+resetSignupBox();
+setTimeout(()=> window.location.href="index.html",1000);
+if(error) throw error;
+}catch(error){
+showAlert("error","Signup failed.")
+}}
+
+//login
+async function login(email, password){
+const {data,error} = await sb.auth.signInWithPassword({
+email: email,
+password: password,
+});
+if(error){
+return{success: false, message: error.message};
+}
+return{success: true, data: data};
+}
+
+
+
+//Signup submit
+$("#signUp-form").onsubmit = async function(e){
+e.preventDefault();
+const btnIcon = $("#signUp-form .submit-but");
+const email = $("#signUp-box span input[type='email']").value;
+const otp = $("#signUp-box span input[type='number']").value;
+const password = $("#signUp-box span:nth-of-type(3) input").value;
+if(!isEmailValid(email)){
+ showAlert("error", "Enter a valid email.");
+}else if(!isOtpValid(otp)){
+ showAlert("error", "OTP Invalid");
+}else if(!isUserVerified){
+ showAlert("error", "OTP not verified");
+}else if(!isPasswordValid(password)){
+ showAlert("error", "Password not valid<br>match : 10chars, 0-9, _, A-Z, a-z",5000);
+}else{
+  btnIcon.setAttribute("disabled","true");
+  btnIcon.innerHTML ='Signup<i class="loader_dotted"></i>';
+  await signUp(password);
+  btnIcon.innerHTML ='Signup<i class="gw-icon">start</i>';
+  btnIcon.removeAttribute("disabled");
+}}
+
+//Login submit
+$("#login-form").onsubmit = async function(e){
+e.preventDefault();
+const btnIcon = $("#login-form .submit-but");
+const email = $("#login-box span input[type='email']").value;
+const password = $("#login-box span:nth-of-type(2) input").value;
+if(!isEmailValid(email)){
+ showAlert("error", "Enter a valid email.");
+}else{
+ btnIcon.setAttribute("disabled","true");
+ btnIcon.innerHTML ='Login<i class="loader_dotted"></i>';
+ login(email,password).then(response =>{
+ // local key = sb-bsblowjukqjtsnbzqqxs-auth-token
+ if(response.success){
+ showAlert("success", "Logged in successfully.");
+ setTimeout(()=>
+ window.location.href="index.html",1000)
+ }else{
+ showAlert("error","Invalid Password or Email <br>Signup to change password.");
+ btnIcon.innerHTML ='Login<i class="gw-icon">start</i>';
+ btnIcon.removeAttribute("disabled");
+ }});
+}}
+
 </script>
 </body>
 </html>
