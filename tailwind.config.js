@@ -1,0 +1,55 @@
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    "./app/**/*.{js,jsx}",
+    "./pages/**/*.{js,jsx}",
+    "./components/**/*.{js,jsx}",
+    "./lib/**/*.{js,jsx}",
+  ],
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        theme: {
+          bg: 'var(--theme-bg)',
+          panel: 'var(--theme-panel)',
+          sub: 'var(--theme-panel-sub)',
+          sidebar: 'var(--theme-sidebar)',
+          border: 'var(--theme-border)',
+          borderLight: 'var(--theme-border-light)',
+          accent: 'var(--theme-accent)',
+          accentHover: 'var(--theme-accent-hover)',
+          accentShadow: 'var(--theme-accent-shadow)',
+          btn: 'var(--theme-btn-bg)',
+          btnHover: 'var(--theme-btn-hover)',
+          btnActive: 'var(--theme-btn-active)',
+          text: 'var(--theme-text)',
+          sec: 'var(--theme-text-sec)',
+          muted: 'var(--theme-text-muted)',
+        },
+        chess: {
+          bg: 'var(--theme-bg)',
+          panel: 'var(--theme-panel)',
+          sidebar: 'var(--theme-sidebar)',
+          card: 'var(--theme-panel)',
+          border: 'var(--theme-border)',
+          borderLight: 'var(--theme-border-light)',
+          green: 'var(--theme-accent)',
+          greenHover: 'var(--theme-accent-hover)',
+          greenDark: 'var(--theme-accent-shadow)',
+          btn: 'var(--theme-btn-bg)',
+          btnHover: 'var(--theme-btn-hover)',
+          btnActive: 'var(--theme-btn-active)',
+          text: 'var(--theme-text)',
+          subtext: 'var(--theme-text-sec)',
+          muted: 'var(--theme-text-muted)',
+          highlight: '#f7f769',
+        },
+      },
+      fontFamily: {
+        sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+      },
+    },
+  },
+  plugins: [],
+};

@@ -1,0 +1,56 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Next.js Build Output
+.next/
+out/
+
+# Production Build Artifacts
+build/
+
+# SWC Compiler Cache
+.swc/
+
+# Coverage Directory (Testing)
+coverage/
+htmlcov/
+
+# Vercel Deployment Configurations
+.vercel/
+
+# TypeScript Cache
+*.tsbuildinfo
+next-env.d.ts
+
+# Environment Variables (Keep your secrets safe!)
+.env
+.env.local
+.env.production
+.env.development
+.env.local.errors
+.env.*.local
+
+# OS Metadata & System Files
+.DS_Store
+Thumbs.db
+*.bak
+*.swp
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
