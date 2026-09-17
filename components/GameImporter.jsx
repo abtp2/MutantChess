@@ -108,9 +108,9 @@ export default function GameImporter({ onSelectGameForAnalysis }) {
     <div className="w-full max-w-4xl mx-auto px-3 sm:px-6 py-6 select-none animate-fadeIn">
       
       {/* Header Card */}
-      <div className="bg-theme-panel border border-theme-border rounded-xl p-5 shadow-lg mb-4">
+      <div className="bg-theme-panel border border-theme-border rounded-sm p-5 shadow-lg mb-4">
         <div className="flex items-center gap-3 mb-3">
-          <div className="w-9 h-9 rounded-lg bg-theme-accent flex items-center justify-center text-white shadow">
+          <div className="w-9 h-9 rounded-sm bg-theme-accent flex items-center justify-center text-white shadow">
             <DownloadCloud className="w-5 h-5" />
           </div>
           <div>
@@ -132,7 +132,7 @@ export default function GameImporter({ onSelectGameForAnalysis }) {
             <button
               key={tab.id}
               onClick={() => { setActiveTab(tab.id); setGames([]); setError(''); }}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`px-3.5 py-1.5 rounded-sm text-xs font-bold transition-all ${
                 activeTab === tab.id
                   ? 'bg-theme-accent text-white shadow-md'
                   : 'bg-theme-btn text-theme-sec hover:bg-theme-btnHover hover:text-white'
@@ -145,10 +145,10 @@ export default function GameImporter({ onSelectGameForAnalysis }) {
       </div>
 
       {/* Main Card */}
-      <div className="bg-theme-panel border border-theme-border rounded-xl p-5 shadow-lg">
+      <div className="bg-theme-panel border border-theme-border rounded-sm p-5 shadow-lg">
         
         {error && (
-          <div className="mb-4 p-3 rounded-lg bg-red-950/60 border border-red-800 text-red-300 text-xs flex items-center gap-2">
+          <div className="mb-4 p-3 rounded-sm bg-red-950/60 border border-red-800 text-red-300 text-xs flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
@@ -168,12 +168,12 @@ export default function GameImporter({ onSelectGameForAnalysis }) {
                     ? "Enter Chess.com username (e.g. magnuscarlsen, hikaru)..."
                     : "Enter Lichess username (e.g. DrNykterstein, penguingm1)..."
                 }
-                className="flex-1 bg-theme-sub border border-theme-border rounded-lg px-3.5 py-2.5 text-xs sm:text-sm text-theme-text placeholder-theme-muted focus:outline-none focus:border-theme-accent"
+                className="flex-1 bg-theme-sub border border-theme-border rounded-sm px-3.5 py-2.5 text-xs sm:text-sm text-theme-text placeholder-theme-muted focus:outline-none focus:border-theme-accent"
               />
               <button
                 onClick={() => handleSearch()}
                 disabled={loading || !username.trim()}
-                className="px-5 py-2.5 rounded-lg font-bold text-xs sm:text-sm btn-chess-green flex items-center gap-2 disabled:opacity-40"
+                className="px-5 py-2.5 rounded-sm font-bold text-xs sm:text-sm btn-chess-green flex items-center gap-2 disabled:opacity-40"
               >
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
                 <span>Fetch</span>
@@ -194,7 +194,7 @@ export default function GameImporter({ onSelectGameForAnalysis }) {
                       setUsername(user);
                       handleSearch(user);
                     }}
-                    className="px-2.5 py-1 rounded-md bg-theme-btn hover:bg-theme-btnHover text-xs font-mono text-theme-sec hover:text-white transition-colors"
+                    className="px-2.5 py-1 rounded-xs bg-theme-btn hover:bg-theme-btnHover text-xs font-mono text-theme-sec hover:text-white transition-colors"
                   >
                     {user}
                   </button>
@@ -213,7 +213,7 @@ export default function GameImporter({ onSelectGameForAnalysis }) {
                     <div
                       key={g.id}
                       onClick={() => handleSelectGame(g)}
-                      className="p-3 rounded-lg bg-theme-sub hover:bg-theme-btnHover border border-theme-border hover:border-theme-accent cursor-pointer transition-all shadow-sm group"
+                      className="p-3 rounded-sm bg-theme-sub hover:bg-theme-btnHover border border-theme-border hover:border-theme-accent cursor-pointer transition-all shadow-sm group"
                     >
                       <div className="flex items-center justify-between text-[11px] text-theme-muted mb-1">
                         <span>{g.date}</span>
@@ -235,7 +235,7 @@ export default function GameImporter({ onSelectGameForAnalysis }) {
 
                       <div className="mt-2.5 pt-2 border-t border-theme-border flex items-center justify-between">
                         <span
-                          className={`text-[11px] font-bold px-2 py-0.5 rounded ${
+                          className={`text-[11px] font-bold px-2 py-0.5 rounded-xs ${
                             g.result === 'Win'
                               ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-800/60'
                               : g.result === 'Loss'
@@ -271,12 +271,12 @@ export default function GameImporter({ onSelectGameForAnalysis }) {
                 onChange={(e) => setPgnInput(e.target.value)}
                 placeholder="1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. O-O Nf6..."
                 rows={6}
-                className="w-full bg-theme-sub border border-theme-border rounded-lg p-3 text-xs font-mono text-theme-text placeholder-theme-muted focus:outline-none focus:border-theme-accent"
+                className="w-full bg-theme-sub border border-theme-border rounded-sm p-3 text-xs font-mono text-theme-text placeholder-theme-muted focus:outline-none focus:border-theme-accent"
               />
             </div>
 
             <div className="flex items-center justify-between gap-3">
-              <label className="px-3.5 py-2 rounded-lg bg-theme-btn hover:bg-theme-btnHover text-xs font-semibold text-theme-sec hover:text-white cursor-pointer transition-colors flex items-center gap-2">
+              <label className="px-3.5 py-2 rounded-sm bg-theme-btn hover:bg-theme-btnHover text-xs font-semibold text-theme-sec hover:text-white cursor-pointer transition-colors flex items-center gap-2">
                 <FileText className="w-4 h-4 text-theme-accent" />
                 <span>Upload .pgn File</span>
                 <input
@@ -290,7 +290,7 @@ export default function GameImporter({ onSelectGameForAnalysis }) {
               <button
                 onClick={handleLoadPgn}
                 disabled={!pgnInput.trim()}
-                className="px-5 py-2.5 rounded-lg font-bold text-xs sm:text-sm btn-chess-green flex items-center gap-2 disabled:opacity-40"
+                className="px-5 py-2.5 rounded-sm font-bold text-xs sm:text-sm btn-chess-green flex items-center gap-2 disabled:opacity-40"
               >
                 <Sparkles className="w-4 h-4" />
                 <span>Review Game</span>
@@ -311,14 +311,14 @@ export default function GameImporter({ onSelectGameForAnalysis }) {
                 value={fenInput}
                 onChange={(e) => setFenInput(e.target.value)}
                 placeholder="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-                className="w-full bg-theme-sub border border-theme-border rounded-lg px-3.5 py-2.5 text-xs sm:text-sm font-mono text-theme-text placeholder-theme-muted focus:outline-none focus:border-theme-accent"
+                className="w-full bg-theme-sub border border-theme-border rounded-sm px-3.5 py-2.5 text-xs sm:text-sm font-mono text-theme-text placeholder-theme-muted focus:outline-none focus:border-theme-accent"
               />
             </div>
 
             <button
               onClick={handleLoadFen}
               disabled={!fenInput.trim()}
-              className="px-5 py-2.5 rounded-lg font-bold text-xs sm:text-sm btn-chess-green flex items-center gap-2 disabled:opacity-40"
+              className="px-5 py-2.5 rounded-sm font-bold text-xs sm:text-sm btn-chess-green flex items-center gap-2 disabled:opacity-40"
             >
               <span>Load in Analysis</span>
             </button>

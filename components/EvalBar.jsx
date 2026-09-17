@@ -43,7 +43,7 @@ export default function EvalBar({
 
   return (
     <div
-      className="relative w-5 sm:w-6 rounded-md overflow-hidden bg-[#181715] border border-theme-border flex flex-col justify-between select-none shrink-0 transition-all duration-150"
+      className="relative w-5 sm:w-6 rounded-xs overflow-hidden bg-[#181715] border border-theme-border flex flex-col justify-between select-none shrink-0 transition-all duration-150"
       style={{ height: heightStyle }}
     >
       {/* Top half indicator (Black if standard, White if flipped) */}

@@ -63,6 +63,7 @@ body {
   background-color: var(--theme-accent);
   color: var(--theme-accent-text);
   border: 1px solid transparent;
+  border-radius: 3px;
   transition: all 0.15s ease-in-out;
 }
 
@@ -80,6 +81,7 @@ body {
   background-color: var(--theme-btn-bg);
   color: var(--theme-text-sec);
   border: 1px solid var(--theme-border);
+  border-radius: 3px;
   transition: all 0.15s ease-in-out;
 }
 
@@ -91,4 +93,35 @@ body {
 
 .btn-chess-secondary:active:not(:disabled) {
   transform: translateY(1px);
+}
+
+input,
+select,
+textarea {
+  border-radius: 3px;
+}
+
+/* Ensure pieces on the chessboard never remain stuck with low opacity */
+[data-piece] {
+  opacity: 1 !important;
+}
+
+/* Move Annotation Badge pop-in animation */
+@keyframes badgePopIn {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-badge-pop {
+  animation: badgePopIn 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }

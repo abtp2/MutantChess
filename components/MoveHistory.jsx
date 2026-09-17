@@ -42,7 +42,7 @@ export default function MoveHistory({
       <button
         ref={isCurrent ? activeMoveRef : null}
         onClick={() => onSelectMove(index)}
-        className={`flex items-center justify-between px-2 py-1 rounded text-xs font-mono font-medium transition-colors w-1/2 ${
+        className={`flex items-center justify-between px-2 py-1 rounded-xs text-xs font-mono font-medium transition-colors w-1/2 ${
           isCurrent
             ? 'bg-theme-btn text-white font-bold border-b-2 border-theme-accent'
             : 'text-theme-sec hover:bg-theme-sub hover:text-white'
@@ -51,7 +51,7 @@ export default function MoveHistory({
         <span>{san}</span>
         {classification && (
           <span
-            className="text-[10px] px-1 rounded font-bold ml-1"
+            className="text-[10px] px-1 rounded-xs font-bold ml-1"
             style={{
               backgroundColor: classification.bg,
               color: classification.color,
@@ -66,7 +66,7 @@ export default function MoveHistory({
   };
 
   return (
-    <div className="flex flex-col h-full bg-theme-panel rounded-lg border border-theme-border overflow-hidden select-none">
+    <div className="flex flex-col h-full bg-theme-panel rounded-sm border border-theme-border overflow-hidden select-none">
       {/* Header */}
       <div className="px-3 py-2 bg-theme-sidebar border-b border-theme-border flex items-center justify-between text-xs font-bold text-theme-muted uppercase tracking-wider">
         <span>Move List ({moves.length})</span>
@@ -85,7 +85,7 @@ export default function MoveHistory({
           pairs.map((pair) => (
             <div
               key={pair.number}
-              className={`flex items-center rounded text-xs py-0.5 px-1 ${
+              className={`flex items-center rounded-xs text-xs py-0.5 px-1 ${
                 pair.number % 2 === 0 ? 'bg-theme-sub' : 'bg-theme-panel'
               }`}
             >
@@ -106,28 +106,28 @@ export default function MoveHistory({
         <button
           onClick={onFirst}
           title="First move"
-          className="p-1.5 rounded-md bg-theme-btn hover:bg-theme-btnHover text-theme-sec hover:text-white border border-theme-border transition-colors"
+          className="p-1.5 rounded-xs bg-theme-btn hover:bg-theme-btnHover text-theme-sec hover:text-white border border-theme-border transition-colors"
         >
           <ChevronsLeft className="w-4 h-4" />
         </button>
         <button
           onClick={onPrev}
           title="Previous move"
-          className="p-1.5 rounded-md bg-theme-btn hover:bg-theme-btnHover text-theme-sec hover:text-white border border-theme-border transition-colors"
+          className="p-1.5 rounded-xs bg-theme-btn hover:bg-theme-btnHover text-theme-sec hover:text-white border border-theme-border transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
         <button
           onClick={onNext}
           title="Next move"
-          className="p-1.5 rounded-md bg-theme-btn hover:bg-theme-btnHover text-theme-sec hover:text-white border border-theme-border transition-colors"
+          className="p-1.5 rounded-xs bg-theme-btn hover:bg-theme-btnHover text-theme-sec hover:text-white border border-theme-border transition-colors"
         >
           <ChevronRight className="w-4 h-4" />
         </button>
         <button
           onClick={onLast}
           title="Last move"
-          className="p-1.5 rounded-md bg-theme-btn hover:bg-theme-btnHover text-theme-sec hover:text-white border border-theme-border transition-colors"
+          className="p-1.5 rounded-xs bg-theme-btn hover:bg-theme-btnHover text-theme-sec hover:text-white border border-theme-border transition-colors"
         >
           <ChevronsRight className="w-4 h-4" />
         </button>

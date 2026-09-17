@@ -24,13 +24,15 @@ import {
   Award,
   Copy,
   Check,
+  Minus,
+  Plus,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 export default function AnalysisBoard({
   initialMoves = [],
   initialFen = null,
-  boardThemeId = 'icy_sea',
+  boardThemeId = 'stone',
 }) {
   const [moves, setMoves] = useState(initialMoves);
   const [currentStep, setCurrentStep] = useState(() => (initialMoves && initialMoves.length > 0 ? initialMoves.length - 1 : -1));
@@ -45,6 +47,32 @@ export default function AnalysisBoard({
   const [activeTab, setActiveTab] = useState('review'); // 'review' | 'moves' | 'graph'
   const [copiedFen, setCopiedFen] = useState(false);
   const [copiedPgn, setCopiedPgn] = useState(false);
+  const [userBoardWidth, setUserBoardWidth] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('mutantchess_board_width');
+      if (saved) {
+        const parsed = parseInt(saved, 10);
+        if (!isNaN(parsed) && parsed >= 320 && parsed <= 720) return parsed;
+      }
+    }
+    return null;
+  });
+
+  const handleAdjustBoardWidth = (delta) => {
+    const current = userBoardWidth || boardHeight || 540;
+    const nextWidth = Math.max(340, Math.min(680, current + delta));
+    setUserBoardWidth(nextWidth);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('mutantchess_board_width', nextWidth.toString());
+    }
+  };
+
+  const handleResetBoardWidth = () => {
+    setUserBoardWidth(null);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('mutantchess_board_width');
+    }
+  };
 
   // Position history derived synchronously
   const fensHistory = React.useMemo(() => {
@@ -237,6 +265,12 @@ export default function AnalysisBoard({
   };
 
   const currentClassifiedMove = reviewData && currentStep >= 0 ? reviewData.classifiedMoves[currentStep] : null;
+  const currentAnnotation = currentClassifiedMove
+    ? {
+        square: currentClassifiedMove.to,
+        classification: currentClassifiedMove.classification,
+      }
+    : null;
 
   return (
     <div className="w-full max-w-6xl mx-auto px-2 sm:px-4 py-2 sm:py-5 select-none animate-fadeIn">
@@ -248,9 +282,9 @@ export default function AnalysisBoard({
         <div className="lg:col-span-7 xl:col-span-8 flex flex-col items-center w-full">
           
           {/* Top Player (Black) Card */}
-          <div className="w-full max-w-[580px] mb-2 px-3 py-2 bg-theme-panel rounded-lg border border-theme-border flex items-center justify-between shadow-xs">
+          <div className="w-full max-w-[680px] mb-2 px-3 py-2 bg-theme-panel rounded-sm border border-theme-border flex items-center justify-between shadow-xs">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-md bg-theme-btn border border-theme-border flex items-center justify-center font-bold text-xs text-white">
+              <div className="w-9 h-9 rounded-sm bg-theme-btn border border-theme-border flex items-center justify-center font-bold text-xs text-white">
                 {isFlipped ? 'W' : 'B'}
               </div>
               <div>
@@ -259,7 +293,7 @@ export default function AnalysisBoard({
                     {isFlipped ? 'White Player' : 'Black Player'}
                   </span>
                   {reviewData && (
-                    <span className="text-[11px] font-mono font-bold bg-theme-btn text-theme-accent px-2 py-0.5 rounded border border-theme-border flex items-center gap-1.5">
+                    <span className="text-[11px] font-mono font-bold bg-theme-btn text-theme-accent px-2 py-0.5 rounded-xs border border-theme-border flex items-center gap-1.5">
                       <span>{isFlipped ? `${reviewData.whiteAccuracy}%` : `${reviewData.blackAccuracy}%`}</span>
                       {(isFlipped ? reviewData.whiteEstimatedElo : reviewData.blackEstimatedElo) && (
                         <span className="text-theme-muted font-normal">
@@ -275,13 +309,13 @@ export default function AnalysisBoard({
               </div>
             </div>
 
-            <div className="text-xs font-mono text-theme-muted bg-theme-sub px-2.5 py-1 rounded border border-theme-border">
+            <div className="text-xs font-mono text-theme-muted bg-theme-sub px-2.5 py-1 rounded-xs border border-theme-border">
               {currentStep >= 0 ? `Move ${Math.floor(currentStep / 2) + 1}` : 'Start'}
             </div>
           </div>
 
           {/* Board with Eval Bar Row */}
-          <div className="w-full max-w-[580px] flex gap-2 sm:gap-3 items-stretch justify-center">
+          <div className="w-full max-w-[680px] flex gap-2 sm:gap-3 items-stretch justify-center">
             <EvalBar
               cp={liveEval.cp}
               mate={liveEval.mate}
@@ -298,6 +332,8 @@ export default function AnalysisBoard({
                 themeId={boardThemeId}
                 arrow={bestMoveArrow}
                 onBoardWidthChange={setBoardHeight}
+                customBoardWidth={userBoardWidth}
+                annotation={currentAnnotation}
                 lastMove={
                   currentStep >= 0 && moves[currentStep]
                     ? { from: moves[currentStep].from, to: moves[currentStep].to }
@@ -308,9 +344,9 @@ export default function AnalysisBoard({
           </div>
 
           {/* Bottom Player (White) Card */}
-          <div className="w-full max-w-[580px] mt-2 px-3 py-2 bg-theme-panel rounded-lg border border-theme-border flex items-center justify-between shadow-xs">
+          <div className="w-full max-w-[680px] mt-2 px-3 py-2 bg-theme-panel rounded-sm border border-theme-border flex items-center justify-between shadow-xs">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-md bg-[#ffffff] border border-gray-300 flex items-center justify-center font-bold text-xs text-gray-900 shadow-xs">
+              <div className="w-9 h-9 rounded-sm bg-[#ffffff] border border-gray-300 flex items-center justify-center font-bold text-xs text-gray-900 shadow-xs">
                 {isFlipped ? 'B' : 'W'}
               </div>
               <div>
@@ -319,7 +355,7 @@ export default function AnalysisBoard({
                     {isFlipped ? 'Black Player' : 'White Player'}
                   </span>
                   {reviewData && (
-                    <span className="text-[11px] font-mono font-bold bg-theme-btn text-theme-accent px-2 py-0.5 rounded border border-theme-border flex items-center gap-1.5">
+                    <span className="text-[11px] font-mono font-bold bg-theme-btn text-theme-accent px-2 py-0.5 rounded-xs border border-theme-border flex items-center gap-1.5">
                       <span>{isFlipped ? `${reviewData.blackAccuracy}%` : `${reviewData.whiteAccuracy}%`}</span>
                       {(isFlipped ? reviewData.blackEstimatedElo : reviewData.whiteEstimatedElo) && (
                         <span className="text-theme-muted font-normal">
@@ -336,10 +372,36 @@ export default function AnalysisBoard({
             </div>
 
             <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 bg-theme-sub px-1.5 py-1 rounded-xs border border-theme-border text-xs">
+                <button
+                  onClick={() => handleAdjustBoardWidth(-30)}
+                  title="Decrease board size"
+                  className="p-1 rounded-xs hover:bg-theme-btn text-theme-sec hover:text-white transition-colors"
+                >
+                  <Minus className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={handleResetBoardWidth}
+                  title="Fit to screen (Auto)"
+                  className={`text-[10px] font-mono px-1.5 py-0.5 rounded-xs transition-colors ${
+                    userBoardWidth === null ? 'bg-theme-btn text-theme-accent font-bold' : 'text-theme-muted hover:text-white'
+                  }`}
+                >
+                  {userBoardWidth ? `${userBoardWidth}px` : 'Auto'}
+                </button>
+                <button
+                  onClick={() => handleAdjustBoardWidth(30)}
+                  title="Increase board size"
+                  className="p-1 rounded-xs hover:bg-theme-btn text-theme-sec hover:text-white transition-colors"
+                >
+                  <Plus className="w-3 h-3" />
+                </button>
+              </div>
+
               <button
                 onClick={() => setIsFlipped(!isFlipped)}
                 title="Flip board view"
-                className="p-1.5 rounded bg-theme-btn hover:bg-theme-btnHover text-theme-sec hover:text-white border border-theme-border transition-colors"
+                className="p-1.5 rounded-xs bg-theme-btn hover:bg-theme-btnHover text-theme-sec hover:text-white border border-theme-border transition-colors"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
               </button>
@@ -347,7 +409,7 @@ export default function AnalysisBoard({
           </div>
 
           {/* Live Engine Info Pill */}
-          <div className="w-full max-w-[580px] mt-2 px-3 py-1.5 bg-theme-panel rounded-lg border border-theme-border flex items-center justify-between text-xs font-mono shadow-xs">
+          <div className="w-full max-w-[680px] mt-2 px-3 py-1.5 bg-theme-panel rounded-sm border border-theme-border flex items-center justify-between text-xs font-mono shadow-xs">
             <div className="flex items-center gap-2">
               <span className="text-theme-muted">Eval:</span>
               <span className="font-bold text-theme-text">
@@ -363,7 +425,7 @@ export default function AnalysisBoard({
             {liveEval.bestMove && (
               <div className="flex items-center gap-1.5">
                 <span className="text-theme-muted">Engine Best:</span>
-                <span className="font-bold text-theme-accent bg-theme-sub border border-theme-border px-1.5 py-0.5 rounded">
+                <span className="font-bold text-theme-accent bg-theme-sub border border-theme-border px-1.5 py-0.5 rounded-xs">
                   {liveEval.bestMove}
                 </span>
               </div>
@@ -376,10 +438,10 @@ export default function AnalysisBoard({
         <div className="lg:col-span-5 xl:col-span-4 flex flex-col gap-3 w-full">
           
           {/* Tabs Navigation (ChessDream style) */}
-          <div className="flex bg-theme-panel border border-theme-border rounded-lg p-1 gap-1">
+          <div className="flex bg-theme-panel border border-theme-border rounded-sm p-1 gap-1">
             <button
               onClick={() => setActiveTab('review')}
-              className={`flex-1 py-1.5 text-xs font-bold rounded-md flex items-center justify-center gap-1.5 transition-colors ${
+              className={`flex-1 py-1.5 text-xs font-bold rounded-sm flex items-center justify-center gap-1.5 transition-colors ${
                 activeTab === 'review'
                   ? 'bg-theme-btn text-white shadow-xs'
                   : 'text-theme-muted hover:text-white'
@@ -391,7 +453,7 @@ export default function AnalysisBoard({
 
             <button
               onClick={() => setActiveTab('moves')}
-              className={`flex-1 py-1.5 text-xs font-bold rounded-md flex items-center justify-center gap-1.5 transition-colors ${
+              className={`flex-1 py-1.5 text-xs font-bold rounded-sm flex items-center justify-center gap-1.5 transition-colors ${
                 activeTab === 'moves'
                   ? 'bg-theme-btn text-white shadow-xs'
                   : 'text-theme-muted hover:text-white'
@@ -403,7 +465,7 @@ export default function AnalysisBoard({
 
             <button
               onClick={() => setActiveTab('graph')}
-              className={`flex-1 py-1.5 text-xs font-bold rounded-md flex items-center justify-center gap-1.5 transition-colors ${
+              className={`flex-1 py-1.5 text-xs font-bold rounded-sm flex items-center justify-center gap-1.5 transition-colors ${
                 activeTab === 'graph'
                   ? 'bg-theme-btn text-white shadow-xs'
                   : 'text-theme-muted hover:text-white'
@@ -429,11 +491,11 @@ export default function AnalysisBoard({
             <div className="space-y-3">
               {/* Review Start / Progress Card */}
               {!reviewData && !isAnalyzing && (
-                <div className="p-4 bg-theme-panel rounded-lg border border-theme-border text-center space-y-2.5 shadow-xs">
+                <div className="p-4 bg-theme-panel rounded-sm border border-theme-border text-center space-y-2.5 shadow-xs">
                   <button
                     onClick={handleStartReview}
                     disabled={moves.length === 0}
-                    className="w-full py-3 px-4 rounded-lg font-bold text-sm btn-chess-green flex items-center justify-center gap-2 shadow disabled:opacity-40"
+                    className="w-full py-3 px-4 rounded-sm font-bold text-sm btn-chess-green flex items-center justify-center gap-2 shadow disabled:opacity-40"
                   >
                     <Sparkles className="w-4 h-4" />
                     <span>Run Deep Game Review</span>
@@ -448,7 +510,7 @@ export default function AnalysisBoard({
 
               {/* In Progress */}
               {isAnalyzing && (
-                <div className="p-4 bg-theme-panel rounded-lg border border-theme-border text-center space-y-2.5 shadow-xs">
+                <div className="p-4 bg-theme-panel rounded-sm border border-theme-border text-center space-y-2.5 shadow-xs">
                   <div className="flex items-center justify-center gap-2 text-sm font-bold text-theme-accent">
                     <Cpu className="w-4 h-4 animate-spin" />
                     <span>Deep Tactical Game Review in Progress</span>
@@ -470,23 +532,23 @@ export default function AnalysisBoard({
                     />
                   </div>
                   <div className="text-[10px] text-theme-muted font-mono">
-                    Stockfish 18 WASM &bull; Depth 16 &bull; Grandmaster CAPS2
+                    Stockfish 18 WASM &bull; Multi-PV 3 &bull; Depth 16 &bull; Grandmaster CAPS2
                   </div>
                 </div>
               )}
 
               {/* Chess.com Style Coach Dialogue Card (Reference Image 2) */}
               {currentClassifiedMove && (
-                <div className="p-3.5 rounded-lg bg-theme-panel border border-theme-border shadow-xs space-y-3">
+                <div className="p-3.5 rounded-sm bg-theme-panel border border-theme-border shadow-xs space-y-3">
                   {/* Header Row: Coach Avatar + Move Badge + Score Pill */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-md bg-theme-sub border border-theme-border flex items-center justify-center font-bold text-xs text-theme-accent shrink-0">
+                      <div className="w-8 h-8 rounded-sm bg-theme-sub border border-theme-border flex items-center justify-center font-bold text-xs text-theme-accent shrink-0">
                         COACH
                       </div>
                       <div className="flex items-center gap-1.5">
                         <span
-                          className="text-xs px-2 py-0.5 rounded font-black font-mono"
+                          className="text-xs px-2 py-0.5 rounded-xs font-black font-mono"
                           style={{
                             backgroundColor: currentClassifiedMove.classification.bg,
                             color: currentClassifiedMove.classification.color,
@@ -498,7 +560,7 @@ export default function AnalysisBoard({
                       </div>
                     </div>
 
-                    <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-theme-btn border border-theme-border text-theme-text">
+                    <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-xs bg-theme-btn border border-theme-border text-theme-text">
                       {currentClassifiedMove.scoreDisplay}
                     </span>
                   </div>
@@ -510,7 +572,7 @@ export default function AnalysisBoard({
 
                   {/* Engine Best Line Suggestion */}
                   {currentClassifiedMove.bestMoveSan && (
-                    <div className="text-[11px] text-theme-muted bg-theme-sub p-2 rounded border border-theme-border font-mono flex items-center justify-between">
+                    <div className="text-[11px] text-theme-muted bg-theme-sub p-2 rounded-xs border border-theme-border font-mono flex items-center justify-between">
                       <div className="flex items-center gap-1">
                         <span>Best:</span>
                         <span className="font-bold text-theme-accent">{currentClassifiedMove.bestMoveSan}</span>
@@ -523,11 +585,11 @@ export default function AnalysisBoard({
                     </div>
                   )}
 
-                  {/* Chess.com Action Buttons (Retry, Show Line, Next) */}
+                  {/* Action Buttons (Retry, Show Line, Next) */}
                   <div className="grid grid-cols-3 gap-2 pt-1 border-t border-theme-border">
                     <button
                       onClick={handleRetryMove}
-                      className="py-1.5 px-2 rounded-md text-xs font-semibold btn-chess-secondary flex items-center justify-center gap-1"
+                      className="py-1.5 px-2 rounded-sm text-xs font-semibold btn-chess-secondary flex items-center justify-center gap-1"
                     >
                       <Repeat className="w-3.5 h-3.5" />
                       <span>Retry</span>
@@ -535,7 +597,7 @@ export default function AnalysisBoard({
 
                     <button
                       onClick={() => setShowBestLine(!showBestLine)}
-                      className={`py-1.5 px-2 rounded-md text-xs font-semibold flex items-center justify-center gap-1 border transition-colors ${
+                      className={`py-1.5 px-2 rounded-sm text-xs font-semibold flex items-center justify-center gap-1 border transition-colors ${
                         showBestLine
                           ? 'bg-theme-accent text-white border-theme-accent'
                           : 'btn-chess-secondary'
@@ -548,7 +610,7 @@ export default function AnalysisBoard({
                     <button
                       onClick={() => goToStep(Math.min(moves.length - 1, currentStep + 1))}
                       disabled={currentStep >= moves.length - 1}
-                      className="py-1.5 px-2 rounded-md text-xs font-bold btn-chess-green flex items-center justify-center gap-1 disabled:opacity-40"
+                      className="py-1.5 px-2 rounded-sm text-xs font-bold btn-chess-green flex items-center justify-center gap-1 disabled:opacity-40"
                     >
                       <span>Next</span>
                       <ChevronRight className="w-3.5 h-3.5" />
@@ -559,18 +621,18 @@ export default function AnalysisBoard({
 
               {/* Accuracy Summary & Classification Grid (ChessDream style) */}
               {reviewData && (
-                <div className="p-3 bg-theme-panel rounded-lg border border-theme-border space-y-3">
+                <div className="p-3 bg-theme-panel rounded-sm border border-theme-border space-y-3">
                   <div className="flex items-center justify-between border-b border-theme-border pb-2">
                     <div className="flex items-center gap-1.5 text-xs font-bold text-theme-accent">
                       <CheckCircle2 className="w-4 h-4" />
                       <span>Game Review Summary</span>
                     </div>
-                    <span className="text-[10px] font-mono text-theme-muted">Stockfish 18</span>
+                    <span className="text-[10px] font-mono text-theme-muted">Stockfish 18 Multi-PV</span>
                   </div>
 
                   {/* Accuracy & Estimated Performance Elo Cards */}
                   <div className="grid grid-cols-2 gap-2 text-center">
-                    <div className="p-2.5 rounded-lg bg-theme-sub border border-theme-border">
+                    <div className="p-2.5 rounded-sm bg-theme-sub border border-theme-border">
                       <div className="text-[11px] font-medium text-theme-muted">White Accuracy</div>
                       <div className="text-xl font-bold font-mono text-white mt-0.5">
                         {reviewData.whiteAccuracy}%
@@ -581,7 +643,7 @@ export default function AnalysisBoard({
                         </div>
                       )}
                     </div>
-                    <div className="p-2.5 rounded-lg bg-theme-sub border border-theme-border">
+                    <div className="p-2.5 rounded-sm bg-theme-sub border border-theme-border">
                       <div className="text-[11px] font-medium text-theme-muted">Black Accuracy</div>
                       <div className="text-xl font-bold font-mono text-white mt-0.5">
                         {reviewData.blackAccuracy}%
@@ -604,11 +666,11 @@ export default function AnalysisBoard({
                       return (
                         <div
                           key={cat.id}
-                          className="flex items-center justify-between p-1.5 rounded-md bg-theme-sub border border-theme-border"
+                          className="flex items-center justify-between p-1.5 rounded-sm bg-theme-sub border border-theme-border"
                         >
                           <div className="flex items-center gap-2">
                             <span
-                              className="text-[10px] px-1.5 py-0.2 rounded font-black font-mono"
+                              className="text-[10px] px-1.5 py-0.2 rounded-xs font-black font-mono"
                               style={{ backgroundColor: cat.bg, color: cat.color }}
                             >
                               {cat.symbol}
@@ -646,7 +708,7 @@ export default function AnalysisBoard({
 
           {/* TAB 3: GRAPH VIEW */}
           {activeTab === 'graph' && (
-            <div className="p-3 bg-theme-panel rounded-lg border border-theme-border space-y-3">
+            <div className="p-3 bg-theme-panel rounded-sm border border-theme-border space-y-3">
               <span className="text-xs font-bold text-theme-muted uppercase tracking-wider block">
                 Advantage Waveform
               </span>
@@ -670,7 +732,7 @@ export default function AnalysisBoard({
             <button
               onClick={() => goToStep(currentStep - 1)}
               disabled={currentStep <= -1}
-              className="flex-1 py-2 px-3 rounded-lg text-xs font-semibold btn-chess-secondary flex items-center justify-center gap-1 disabled:opacity-40"
+              className="flex-1 py-2 px-3 rounded-sm text-xs font-semibold btn-chess-secondary flex items-center justify-center gap-1 disabled:opacity-40"
             >
               <ChevronLeft className="w-4 h-4" />
               <span>Previous</span>
@@ -678,14 +740,14 @@ export default function AnalysisBoard({
             <button
               onClick={() => goToStep(currentStep + 1)}
               disabled={currentStep >= moves.length - 1}
-              className="flex-1 py-2 px-3 rounded-lg text-xs font-semibold btn-chess-secondary flex items-center justify-center gap-1 disabled:opacity-40"
+              className="flex-1 py-2 px-3 rounded-sm text-xs font-semibold btn-chess-secondary flex items-center justify-center gap-1 disabled:opacity-40"
             >
               <span>Next</span>
               <ChevronRight className="w-4 h-4" />
             </button>
             <button
               onClick={() => goToStep(-1)}
-              className="py-2 px-3 rounded-lg text-xs font-semibold btn-chess-secondary flex items-center justify-center"
+              className="py-2 px-3 rounded-sm text-xs font-semibold btn-chess-secondary flex items-center justify-center"
               title="Reset position"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -696,7 +758,7 @@ export default function AnalysisBoard({
           <div className="grid grid-cols-2 gap-2 pt-1">
             <button
               onClick={handleCopyFen}
-              className="py-2.5 px-3 rounded-lg text-xs font-semibold btn-chess-secondary flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              className="py-2.5 px-3 rounded-sm text-xs font-semibold btn-chess-secondary flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
               title="Copy current position FEN"
             >
               {copiedFen ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-theme-muted" />}
@@ -704,7 +766,7 @@ export default function AnalysisBoard({
             </button>
             <button
               onClick={handleCopyPgn}
-              className="py-2.5 px-3 rounded-lg text-xs font-semibold btn-chess-secondary flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              className="py-2.5 px-3 rounded-sm text-xs font-semibold btn-chess-secondary flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
               title="Copy game PGN"
             >
               {copiedPgn ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-theme-muted" />}

@@ -36,7 +36,7 @@ import {
 import BotAvatar from './BotAvatar';
 
 export default function PlayAI({
-  boardThemeId = 'icy_sea',
+  boardThemeId = 'stone',
   onAnalyzeGame,
 }) {
   const [chess, setChess] = useState(() => new Chess());
@@ -668,7 +668,7 @@ export default function PlayAI({
         <div className="lg:col-span-7 xl:col-span-7 flex flex-col items-center">
           
           {/* Top Opponent (Bot) Card */}
-          <div className="w-full max-w-[560px] mb-2 px-3 sm:px-4 py-2 bg-theme-panel rounded-2xl border border-theme-border flex items-center justify-between">
+          <div className="w-full max-w-[640px] mb-2 px-3 sm:px-4 py-2 bg-theme-panel rounded-sm border border-theme-border flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div
                 onClick={() => setActiveTab('settings')}
@@ -682,10 +682,10 @@ export default function PlayAI({
                   <span className="font-bold text-sm text-theme-text">
                     {useCustomElo ? `Bot (${customElo})` : selectedBot.name}
                   </span>
-                  <span className="text-[11px] font-mono font-bold bg-theme-sub text-theme-sec px-2 py-0.5 rounded-lg border border-theme-border">
+                  <span className="text-[11px] font-mono font-bold bg-theme-sub text-theme-sec px-2 py-0.5 rounded-xs border border-theme-border">
                     {useCustomElo ? customElo : selectedBot.elo}
                   </span>
-                  <span className="text-[11px] text-theme-muted bg-theme-sub px-2 py-0.5 rounded-lg border border-theme-border font-medium">
+                  <span className="text-[11px] text-theme-muted bg-theme-sub px-2 py-0.5 rounded-xs border border-theme-border font-medium">
                     Computer
                   </span>
                 </div>
@@ -705,7 +705,7 @@ export default function PlayAI({
                 </div>
               )}
               <div
-                className={`font-mono text-base sm:text-lg font-bold px-4 py-1.5 rounded-xl border transition-colors ${
+                className={`font-mono text-base sm:text-lg font-bold px-4 py-1.5 rounded-sm border transition-colors ${
                   isTimerStarted && !isPlayerTurn && !gameResult
                     ? 'bg-theme-accent text-white border-theme-accent'
                     : 'bg-theme-sidebar text-theme-sec border-theme-border'
@@ -717,7 +717,7 @@ export default function PlayAI({
           </div>
 
           {/* Board with Eval Bar Row */}
-          <div className="w-full max-w-[560px] flex gap-2 sm:gap-3 items-stretch justify-center">
+          <div className="w-full max-w-[640px] flex gap-2 sm:gap-3 items-stretch justify-center">
             <EvalBar
               cp={evalScore.cp}
               mate={evalScore.mate}
@@ -742,9 +742,9 @@ export default function PlayAI({
           </div>
 
           {/* Bottom Player (You) Card */}
-          <div className="w-full max-w-[560px] mt-2 px-3 sm:px-4 py-2 bg-theme-panel rounded-2xl border border-theme-border flex items-center justify-between">
+          <div className="w-full max-w-[640px] mt-2 px-3 sm:px-4 py-2 bg-theme-panel rounded-sm border border-theme-border flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-theme-sub border border-theme-border shrink-0 flex items-center justify-center text-theme-sec">
+              <div className="w-10 h-10 rounded-sm bg-theme-sub border border-theme-border shrink-0 flex items-center justify-center text-theme-sec">
                 <User className="w-5 h-5" />
               </div>
               <div>
@@ -760,7 +760,7 @@ export default function PlayAI({
 
             {/* Player Clock */}
             <div
-              className={`font-mono text-base sm:text-lg font-bold px-4 py-1.5 rounded-xl border transition-colors ${
+              className={`font-mono text-base sm:text-lg font-bold px-4 py-1.5 rounded-sm border transition-colors ${
                 isTimerStarted && isPlayerTurn && !gameResult
                   ? 'bg-theme-accent text-white border-theme-accent'
                   : 'bg-theme-sidebar text-theme-sec border-theme-border'
@@ -816,7 +816,7 @@ export default function PlayAI({
           {activeTab === 'game' && (
             <div className="flex flex-col gap-4 animate-fadeIn">
               {/* Quote Card */}
-              <div className="p-6 bg-theme-panel rounded-2xl border border-theme-border relative flex flex-col items-center justify-center text-center min-h-[140px]">
+              <div className="p-6 bg-theme-panel rounded-sm border border-theme-border relative flex flex-col items-center justify-center text-center min-h-[140px]">
                 <span className="absolute top-3 left-4 text-2xl font-serif text-theme-accent select-none">“</span>
                 <p className="text-sm font-medium text-theme-sec px-4 leading-relaxed">
                   {botMessage || "Let's write some clean code on 64 squares!"}
@@ -829,7 +829,7 @@ export default function PlayAI({
 
               {/* Game Over Banner */}
               {gameResult && (
-                <div className="p-4 rounded-2xl bg-theme-panel border border-theme-border text-center animate-fadeIn">
+                <div className="p-4 rounded-sm bg-theme-panel border border-theme-border text-center animate-fadeIn">
                   <h3 className="text-base font-black uppercase text-white flex items-center justify-center gap-2">
                     {gameResult === 'win' ? (
                       <>
@@ -867,7 +867,7 @@ export default function PlayAI({
                     {onAnalyzeGame && historyMoves.length > 0 && (
                       <button
                         onClick={() => onAnalyzeGame(historyMoves)}
-                        className="w-full py-2.5 px-3 rounded-xl font-bold text-xs btn-chess-green flex items-center justify-center gap-1.5 cursor-pointer"
+                        className="w-full py-2.5 px-3 rounded-sm font-bold text-xs btn-chess-green flex items-center justify-center gap-1.5 cursor-pointer"
                       >
                         <Sparkles className="w-4 h-4" />
                         <span>Review Game with Stockfish</span>
@@ -877,7 +877,7 @@ export default function PlayAI({
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         onClick={handleCopyFen}
-                        className="py-2 px-3 rounded-xl bg-theme-sub border border-theme-border hover:bg-theme-panel flex items-center justify-center gap-1.5 text-xs font-semibold text-theme-sec hover:text-white transition-colors cursor-pointer"
+                        className="py-2 px-3 rounded-sm bg-theme-sub border border-theme-border hover:bg-theme-panel flex items-center justify-center gap-1.5 text-xs font-semibold text-theme-sec hover:text-white transition-colors cursor-pointer"
                         title="Copy current position FEN"
                       >
                         {copiedFen ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-theme-muted" />}
@@ -885,7 +885,7 @@ export default function PlayAI({
                       </button>
                       <button
                         onClick={handleCopyPgn}
-                        className="py-2 px-3 rounded-xl bg-theme-sub border border-theme-border hover:bg-theme-panel flex items-center justify-center gap-1.5 text-xs font-semibold text-theme-sec hover:text-white transition-colors cursor-pointer"
+                        className="py-2 px-3 rounded-sm bg-theme-sub border border-theme-border hover:bg-theme-panel flex items-center justify-center gap-1.5 text-xs font-semibold text-theme-sec hover:text-white transition-colors cursor-pointer"
                         title="Copy complete game PGN"
                       >
                         {copiedPgn ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-theme-muted" />}
@@ -899,7 +899,7 @@ export default function PlayAI({
               {/* Large Green Action Button: New Game */}
               <button
                 onClick={() => startNewGame(playerColor, selectedBot)}
-                className="w-full py-3.5 px-4 rounded-xl font-bold text-base btn-chess-green flex items-center justify-center gap-2 cursor-pointer transition-transform"
+                className="w-full py-3.5 px-4 rounded-sm font-bold text-base btn-chess-green flex items-center justify-center gap-2 cursor-pointer transition-transform"
               >
                 <Play className="w-5 h-5 fill-white" />
                 <span>New Game</span>
@@ -910,7 +910,7 @@ export default function PlayAI({
                 <button
                   onClick={() => handleGameOver('loss', 'You resigned the game.', 'resignation')}
                   disabled={gameResult !== null}
-                  className="py-4 px-2 rounded-2xl bg-theme-panel border border-theme-border hover:bg-theme-sub disabled:opacity-40 flex flex-col items-center justify-center gap-2 text-theme-sec hover:text-white transition-colors cursor-pointer"
+                  className="py-4 px-2 rounded-sm bg-theme-panel border border-theme-border hover:bg-theme-sub disabled:opacity-40 flex flex-col items-center justify-center gap-2 text-theme-sec hover:text-white transition-colors cursor-pointer"
                 >
                   <Flag className="w-5 h-5 text-theme-muted" />
                   <span className="text-xs font-semibold">Resign</span>
@@ -918,14 +918,14 @@ export default function PlayAI({
                 <button
                   onClick={() => handleGameOver('draw', 'Draw agreed.', 'draw')}
                   disabled={gameResult !== null}
-                  className="py-4 px-2 rounded-2xl bg-theme-panel border border-theme-border hover:bg-theme-sub disabled:opacity-40 flex flex-col items-center justify-center gap-2 text-theme-sec hover:text-white transition-colors cursor-pointer"
+                  className="py-4 px-2 rounded-sm bg-theme-panel border border-theme-border hover:bg-theme-sub disabled:opacity-40 flex flex-col items-center justify-center gap-2 text-theme-sec hover:text-white transition-colors cursor-pointer"
                 >
                   <Handshake className="w-5 h-5 text-theme-muted" />
                   <span className="text-xs font-semibold">Draw</span>
                 </button>
                 <button
                   onClick={() => setIsFlipped(!isFlipped)}
-                  className="py-4 px-2 rounded-2xl bg-theme-panel border border-theme-border hover:bg-theme-sub flex flex-col items-center justify-center gap-2 text-theme-sec hover:text-white transition-colors cursor-pointer"
+                  className="py-4 px-2 rounded-sm bg-theme-panel border border-theme-border hover:bg-theme-sub flex flex-col items-center justify-center gap-2 text-theme-sec hover:text-white transition-colors cursor-pointer"
                 >
                   <RefreshCw className="w-5 h-5 text-theme-muted" />
                   <span className="text-xs font-semibold">Flip Board</span>
@@ -936,7 +936,7 @@ export default function PlayAI({
               <div className="grid grid-cols-2 gap-2.5">
                 <button
                   onClick={handleCopyFen}
-                  className="py-2.5 px-3 rounded-2xl bg-theme-panel border border-theme-border hover:bg-theme-sub flex items-center justify-center gap-2 text-xs font-semibold text-theme-sec hover:text-white transition-colors cursor-pointer"
+                  className="py-2.5 px-3 rounded-sm bg-theme-panel border border-theme-border hover:bg-theme-sub flex items-center justify-center gap-2 text-xs font-semibold text-theme-sec hover:text-white transition-colors cursor-pointer"
                   title="Copy current position FEN to clipboard"
                 >
                   {copiedFen ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-theme-muted" />}
@@ -944,7 +944,7 @@ export default function PlayAI({
                 </button>
                 <button
                   onClick={handleCopyPgn}
-                  className="py-2.5 px-3 rounded-2xl bg-theme-panel border border-theme-border hover:bg-theme-sub flex items-center justify-center gap-2 text-xs font-semibold text-theme-sec hover:text-white transition-colors cursor-pointer"
+                  className="py-2.5 px-3 rounded-sm bg-theme-panel border border-theme-border hover:bg-theme-sub flex items-center justify-center gap-2 text-xs font-semibold text-theme-sec hover:text-white transition-colors cursor-pointer"
                   title="Copy game PGN to clipboard"
                 >
                   {copiedPgn ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-theme-muted" />}
@@ -958,7 +958,7 @@ export default function PlayAI({
                 <div className="flex gap-2">
                   <button
                     onClick={() => { setPlayerColor('w'); startNewGame('w', selectedBot); }}
-                    className={`px-5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    className={`px-5 py-2 rounded-sm text-xs font-bold transition-all cursor-pointer ${
                       playerColor === 'w'
                         ? 'bg-transparent text-white border-2 border-theme-accent'
                         : 'bg-theme-panel text-theme-muted hover:text-white border border-theme-border'
@@ -968,7 +968,7 @@ export default function PlayAI({
                   </button>
                   <button
                     onClick={() => { setPlayerColor('b'); startNewGame('b', selectedBot); }}
-                    className={`px-5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    className={`px-5 py-2 rounded-sm text-xs font-bold transition-all cursor-pointer ${
                       playerColor === 'b'
                         ? 'bg-transparent text-white border-2 border-theme-accent'
                         : 'bg-theme-panel text-theme-muted hover:text-white border border-theme-border'
@@ -1005,7 +1005,7 @@ export default function PlayAI({
               {onAnalyzeGame && historyMoves.length > 0 && (
                 <button
                   onClick={() => onAnalyzeGame(historyMoves)}
-                  className="w-full py-2.5 px-3 rounded-xl font-bold text-xs btn-chess-green flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="w-full py-2.5 px-3 rounded-sm font-bold text-xs btn-chess-green flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <Sparkles className="w-4 h-4" />
                   <span>Analyze Move History</span>
@@ -1016,7 +1016,7 @@ export default function PlayAI({
               <div className="grid grid-cols-2 gap-2.5 pt-1">
                 <button
                   onClick={handleCopyFen}
-                  className="py-2.5 px-3 rounded-xl bg-theme-panel border border-theme-border hover:bg-theme-sub flex items-center justify-center gap-2 text-xs font-semibold text-theme-sec hover:text-white transition-colors cursor-pointer"
+                  className="py-2.5 px-3 rounded-sm bg-theme-panel border border-theme-border hover:bg-theme-sub flex items-center justify-center gap-2 text-xs font-semibold text-theme-sec hover:text-white transition-colors cursor-pointer"
                   title="Copy current position FEN to clipboard"
                 >
                   {copiedFen ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-theme-muted" />}
@@ -1024,7 +1024,7 @@ export default function PlayAI({
                 </button>
                 <button
                   onClick={handleCopyPgn}
-                  className="py-2.5 px-3 rounded-xl bg-theme-panel border border-theme-border hover:bg-theme-sub flex items-center justify-center gap-2 text-xs font-semibold text-theme-sec hover:text-white transition-colors cursor-pointer"
+                  className="py-2.5 px-3 rounded-sm bg-theme-panel border border-theme-border hover:bg-theme-sub flex items-center justify-center gap-2 text-xs font-semibold text-theme-sec hover:text-white transition-colors cursor-pointer"
                   title="Copy game PGN to clipboard"
                 >
                   {copiedPgn ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-theme-muted" />}
@@ -1036,7 +1036,7 @@ export default function PlayAI({
 
           {/* TAB 3: SETTINGS (Bot Selection & Custom Elo) */}
           {activeTab === 'settings' && (
-            <div className="p-4 bg-theme-panel rounded-2xl border border-theme-border space-y-4 animate-fadeIn">
+            <div className="p-4 bg-theme-panel rounded-sm border border-theme-border space-y-4 animate-fadeIn">
               <div className="flex items-center justify-between border-b border-theme-border pb-2">
                 <span className="text-xs font-bold text-theme-text uppercase tracking-wider">Select Opponent Bot</span>
                 <span className="text-xs text-theme-muted font-mono">{BOTS.length} Bots Available</span>
@@ -1047,7 +1047,7 @@ export default function PlayAI({
                   <button
                     key={bot.id}
                     onClick={() => handleSelectBot(bot)}
-                    className={`w-full p-2.5 rounded-xl flex items-center justify-between text-left transition-colors cursor-pointer ${
+                    className={`w-full p-2.5 rounded-sm flex items-center justify-between text-left transition-colors cursor-pointer ${
                       selectedBot.id === bot.id && !useCustomElo
                         ? 'bg-theme-sub border border-theme-accent text-white'
                         : 'border border-transparent text-theme-sec hover:bg-theme-sub hover:text-white'
@@ -1060,7 +1060,7 @@ export default function PlayAI({
                         <div className="text-[10px] text-theme-muted">{bot.title}</div>
                       </div>
                     </div>
-                    <span className="font-mono text-xs font-bold text-theme-accent bg-theme-sidebar px-2 py-1 rounded-lg border border-theme-border">
+                    <span className="font-mono text-xs font-bold text-theme-accent bg-theme-sidebar px-2 py-1 rounded-xs border border-theme-border">
                       {bot.elo} Elo
                     </span>
                   </button>
@@ -1071,7 +1071,7 @@ export default function PlayAI({
               <div className="pt-3 border-t border-theme-border space-y-2">
                 <div className="flex items-center justify-between text-xs text-theme-sec">
                   <span className="font-semibold">Custom Strength:</span>
-                  <span className="font-mono font-bold text-theme-accent bg-theme-sidebar px-2 py-0.5 rounded border border-theme-border">
+                  <span className="font-mono font-bold text-theme-accent bg-theme-sidebar px-2 py-0.5 rounded-xs border border-theme-border">
                     {customElo} Elo
                   </span>
                 </div>

@@ -51,7 +51,7 @@ export default function HomeLobby({
   return (
     <div className="w-full flex-1 flex flex-col items-center justify-center p-3 sm:p-6 select-none animate-fadeIn">
       {/* Container Card matching UI_reference.png */}
-      <div className="relative w-full max-w-5xl bg-[#181c24] border border-[#2a3140] rounded-2xl p-5 sm:p-8 sm:pb-10 shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-md">
+      <div className="relative w-full max-w-5xl bg-[#181c24] border border-[#2a3140] rounded-sm p-5 sm:p-8 sm:pb-10 shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-md">
         
         {/* Floating Top Close/Restart Icon Button (matches UI reference) */}
         <div className="absolute -top-5 left-1/2 -translate-x-1/2">
@@ -74,7 +74,7 @@ export default function HomeLobby({
             
             {/* Speech Bubble */}
             <div className="relative mb-2 self-center sm:self-end sm:mr-16 animate-bounce" style={{ animationDuration: '3s' }}>
-              <div className="bg-[#12151c] border border-[#2d3647] rounded-xl px-3.5 py-1.5 text-xs text-gray-200 font-medium shadow-lg max-w-xs text-center">
+              <div className="bg-[#12151c] border border-[#2d3647] rounded-sm px-3.5 py-1.5 text-xs text-gray-200 font-medium shadow-lg max-w-xs text-center">
                 {speechText}
               </div>
               {/* Bubble Arrow */}
@@ -129,9 +129,9 @@ export default function HomeLobby({
               {/* New Game */}
               <button
                 onClick={() => onSelectView('ai')}
-                className="flex items-center gap-3.5 px-5 py-4 rounded-xl bg-[#232936] hover:bg-[#2d3546] border border-[#333d50] hover:border-[#e63946]/50 transition-all text-left shadow-lg group hover:translate-y-[-2px]"
+                className="flex items-center gap-3.5 px-5 py-4 rounded-sm bg-[#232936] hover:bg-[#2d3546] border border-[#333d50] hover:border-[#e63946]/50 transition-all text-left shadow-lg group hover:translate-y-[-2px]"
               >
-                <div className="w-10 h-10 rounded-lg bg-[#181c26] flex items-center justify-center text-red-400 group-hover:scale-110 transition-transform border border-[#333e52]">
+                <div className="w-10 h-10 rounded-sm bg-[#181c26] flex items-center justify-center text-red-400 group-hover:scale-110 transition-transform border border-[#333e52]">
                   <Compass className="w-5 h-5 text-red-400" />
                 </div>
                 <div>
@@ -147,9 +147,9 @@ export default function HomeLobby({
               {/* 1 vs 1 */}
               <button
                 onClick={() => onSelectView('1v1')}
-                className="flex items-center gap-3.5 px-5 py-4 rounded-xl bg-[#232936] hover:bg-[#2d3546] border border-[#333d50] hover:border-blue-500/50 transition-all text-left shadow-lg group hover:translate-y-[-2px]"
+                className="flex items-center gap-3.5 px-5 py-4 rounded-sm bg-[#232936] hover:bg-[#2d3546] border border-[#333d50] hover:border-blue-500/50 transition-all text-left shadow-lg group hover:translate-y-[-2px]"
               >
-                <div className="w-10 h-10 rounded-lg bg-[#181c26] flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform border border-[#333e52]">
+                <div className="w-10 h-10 rounded-sm bg-[#181c26] flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform border border-[#333e52]">
                   <Users className="w-5 h-5 text-blue-400" />
                 </div>
                 <div>
@@ -165,9 +165,9 @@ export default function HomeLobby({
               {/* vs AI */}
               <button
                 onClick={() => onSelectView('ai')}
-                className="flex items-center gap-3.5 px-5 py-4 rounded-xl bg-[#232936] hover:bg-[#2d3546] border border-[#333d50] hover:border-emerald-500/50 transition-all text-left shadow-lg group hover:translate-y-[-2px]"
+                className="flex items-center gap-3.5 px-5 py-4 rounded-sm bg-[#232936] hover:bg-[#2d3546] border border-[#333d50] hover:border-emerald-500/50 transition-all text-left shadow-lg group hover:translate-y-[-2px]"
               >
-                <div className="w-10 h-10 rounded-lg bg-[#181c26] flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform border border-[#333e52]">
+                <div className="w-10 h-10 rounded-sm bg-[#181c26] flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform border border-[#333e52]">
                   <Bot className="w-5 h-5 text-emerald-400" />
                 </div>
                 <div>
@@ -183,9 +183,9 @@ export default function HomeLobby({
               {/* Analysis & Review */}
               <button
                 onClick={() => onSelectView('analysis')}
-                className="flex items-center gap-3.5 px-5 py-4 rounded-xl bg-[#232936] hover:bg-[#2d3546] border border-[#333d50] hover:border-purple-500/50 transition-all text-left shadow-lg group hover:translate-y-[-2px]"
+                className="flex items-center gap-3.5 px-5 py-4 rounded-sm bg-[#232936] hover:bg-[#2d3546] border border-[#333d50] hover:border-purple-500/50 transition-all text-left shadow-lg group hover:translate-y-[-2px]"
               >
-                <div className="w-10 h-10 rounded-lg bg-[#181c26] flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform border border-[#333e52]">
+                <div className="w-10 h-10 rounded-sm bg-[#181c26] flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform border border-[#333e52]">
                   <Sparkles className="w-5 h-5 text-purple-400" />
                 </div>
                 <div>
@@ -203,7 +203,7 @@ export default function HomeLobby({
             {/* Extra Row: Import Games from Chess.com / Lichess */}
             <button
               onClick={() => onSelectView('import')}
-              className="w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl bg-[#1e2533] hover:bg-[#252c3c] border border-[#374357] text-gray-200 hover:text-white transition-all text-xs sm:text-sm font-semibold shadow-md group"
+              className="w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-sm bg-[#1e2533] hover:bg-[#252c3c] border border-[#374357] text-gray-200 hover:text-white transition-all text-xs sm:text-sm font-semibold shadow-md group"
             >
               <DownloadCloud className="w-4 h-4 text-[#e63946] group-hover:scale-110 transition-transform" />
               <span>Import & Review from Chess.com or Lichess</span>

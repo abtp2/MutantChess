@@ -19,10 +19,10 @@ export default function BotAvatar({ bot, size = 'md', className = '' }) {
   const imageSrc = (typeof bot === 'object' && bot?.image) || BOT_IMAGE_MAP[botId] || '/bots/ashutosh_dev.jpg';
 
   const sizeClasses = {
-    sm: 'w-8 h-8 rounded-md',
-    md: 'w-10 h-10 rounded-md',
-    lg: 'w-12 h-12 rounded-lg',
-    xl: 'w-16 h-16 rounded-lg',
+    sm: 'w-8 h-8 rounded-xs',
+    md: 'w-10 h-10 rounded-xs',
+    lg: 'w-12 h-12 rounded-sm',
+    xl: 'w-16 h-16 rounded-sm',
   };
 
   const textSizes = {

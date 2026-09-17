@@ -16,7 +16,7 @@ import {
 import { RotateCcw, Flag, Handshake, Sparkles, RefreshCw, Trophy, ShieldAlert, Copy, Check } from 'lucide-react';
 
 export default function PassAndPlay({
-  boardThemeId = 'icy_sea',
+  boardThemeId = 'stone',
   onAnalyzeGame,
 }) {
   const [chess, setChess] = useState(() => new Chess());
@@ -251,9 +251,9 @@ export default function PassAndPlay({
         <div className="lg:col-span-7 xl:col-span-8 flex flex-col items-center">
           
           {/* Top Player Card */}
-          <div className="w-full max-w-[580px] mb-2 px-3 py-2 bg-theme-panel rounded-lg border border-theme-border flex items-center justify-between shadow-sm">
+          <div className="w-full max-w-[640px] mb-2 px-3 py-2 bg-theme-panel rounded-sm border border-theme-border flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-theme-btn flex items-center justify-center font-bold text-xs text-white border border-theme-border">
+              <div className="w-8 h-8 rounded-sm bg-theme-btn flex items-center justify-center font-bold text-xs text-white border border-theme-border">
                 {isFlipped ? 'W' : 'B'}
               </div>
               <div>
@@ -268,7 +268,7 @@ export default function PassAndPlay({
             </div>
 
             <div
-              className={`font-mono text-sm sm:text-base font-bold px-3 py-1 rounded transition-colors ${
+              className={`font-mono text-sm sm:text-base font-bold px-3 py-1 rounded-xs transition-colors ${
                 isTimerStarted && ((!isFlipped && !isWhiteTurn) || (isFlipped && isWhiteTurn))
                   ? 'bg-theme-accent text-white shadow-md'
                   : 'bg-theme-sub text-theme-sec border border-theme-border'
@@ -279,7 +279,7 @@ export default function PassAndPlay({
           </div>
 
           {/* ChessBoard */}
-          <div className="w-full max-w-[580px] flex justify-center">
+          <div className="w-full max-w-[640px] flex justify-center">
             <ChessBoard
               chess={chess}
               onMove={handleMove}
@@ -292,9 +292,9 @@ export default function PassAndPlay({
           </div>
 
           {/* Bottom Player Card */}
-          <div className="w-full max-w-[580px] mt-2 px-3 py-2 bg-theme-panel rounded-lg border border-theme-border flex items-center justify-between shadow-sm">
+          <div className="w-full max-w-[640px] mt-2 px-3 py-2 bg-theme-panel rounded-sm border border-theme-border flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-[#ffffff] flex items-center justify-center font-bold text-xs text-gray-900 shadow">
+              <div className="w-8 h-8 rounded-sm bg-[#ffffff] flex items-center justify-center font-bold text-xs text-gray-900 shadow">
                 {isFlipped ? 'B' : 'W'}
               </div>
               <div>
@@ -309,7 +309,7 @@ export default function PassAndPlay({
             </div>
 
             <div
-              className={`font-mono text-sm sm:text-base font-bold px-3 py-1 rounded transition-colors ${
+              className={`font-mono text-sm sm:text-base font-bold px-3 py-1 rounded-xs transition-colors ${
                 isTimerStarted && ((isFlipped && !isWhiteTurn) || (!isFlipped && isWhiteTurn))
                   ? 'bg-theme-accent text-white shadow-md'
                   : 'bg-theme-sub text-theme-sec border border-theme-border'
@@ -326,7 +326,7 @@ export default function PassAndPlay({
           
           {/* Game Over Banner */}
           {gameResult && (
-            <div className="p-3.5 rounded-lg bg-theme-panel border-2 border-theme-accent shadow-xl animate-fadeIn text-center">
+            <div className="p-3.5 rounded-sm bg-theme-panel border-2 border-theme-accent shadow-xl animate-fadeIn text-center">
               <h3 className="text-base font-black uppercase text-white flex items-center justify-center gap-2">
                 <Trophy className="w-5 h-5 text-amber-400" />
                 <span>{gameResult}</span>
@@ -335,7 +335,7 @@ export default function PassAndPlay({
               {onAnalyzeGame && historyMoves.length > 0 && (
                 <button
                   onClick={() => onAnalyzeGame(historyMoves)}
-                  className="w-full mt-3 py-2 px-3 rounded-lg font-bold text-xs btn-chess-green flex items-center justify-center gap-1.5 shadow"
+                  className="w-full mt-3 py-2 px-3 rounded-sm font-bold text-xs btn-chess-green flex items-center justify-center gap-1.5 shadow"
                 >
                   <Sparkles className="w-4 h-4" />
                   <span>Review Game with Stockfish</span>
@@ -345,7 +345,7 @@ export default function PassAndPlay({
               <div className="grid grid-cols-2 gap-2 mt-2.5">
                 <button
                   onClick={handleCopyFen}
-                  className="py-2 px-3 rounded-lg bg-theme-sub border border-theme-border hover:bg-theme-panel flex items-center justify-center gap-1.5 text-xs font-semibold text-theme-sec hover:text-white transition-colors cursor-pointer"
+                  className="py-2 px-3 rounded-sm bg-theme-sub border border-theme-border hover:bg-theme-panel flex items-center justify-center gap-1.5 text-xs font-semibold text-theme-sec hover:text-white transition-colors cursor-pointer"
                   title="Copy current position FEN"
                 >
                   {copiedFen ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-theme-muted" />}
@@ -353,7 +353,7 @@ export default function PassAndPlay({
                 </button>
                 <button
                   onClick={handleCopyPgn}
-                  className="py-2 px-3 rounded-lg bg-theme-sub border border-theme-border hover:bg-theme-panel flex items-center justify-center gap-1.5 text-xs font-semibold text-theme-sec hover:text-white transition-colors cursor-pointer"
+                  className="py-2 px-3 rounded-sm bg-theme-sub border border-theme-border hover:bg-theme-panel flex items-center justify-center gap-1.5 text-xs font-semibold text-theme-sec hover:text-white transition-colors cursor-pointer"
                   title="Copy complete game PGN"
                 >
                   {copiedPgn ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-theme-muted" />}
@@ -380,7 +380,7 @@ export default function PassAndPlay({
           <div className="space-y-2">
             <button
               onClick={startNewGame}
-              className="w-full py-2.5 px-4 rounded-lg font-bold text-sm btn-chess-green flex items-center justify-center gap-2 shadow"
+              className="w-full py-2.5 px-4 rounded-sm font-bold text-sm btn-chess-green flex items-center justify-center gap-2 shadow"
             >
               <RotateCcw className="w-4 h-4" />
               <span>New Game</span>
@@ -394,7 +394,7 @@ export default function PassAndPlay({
                   handleGameOver(`${winningPlayer} Wins!`, `${resigningPlayer} resigned.`);
                 }}
                 disabled={gameResult !== null}
-                className="py-2 px-3 rounded-lg text-xs font-semibold btn-chess-secondary disabled:opacity-40 flex items-center justify-center gap-1 cursor-pointer"
+                className="py-2 px-3 rounded-sm text-xs font-semibold btn-chess-secondary disabled:opacity-40 flex items-center justify-center gap-1 cursor-pointer"
               >
                 <Flag className="w-3.5 h-3.5" />
                 <span>Resign</span>
@@ -402,14 +402,14 @@ export default function PassAndPlay({
               <button
                 onClick={() => handleGameOver('Draw Agreed', 'Mutual draw agreement.')}
                 disabled={gameResult !== null}
-                className="py-2 px-3 rounded-lg text-xs font-semibold btn-chess-secondary disabled:opacity-40 flex items-center justify-center gap-1 cursor-pointer"
+                className="py-2 px-3 rounded-sm text-xs font-semibold btn-chess-secondary disabled:opacity-40 flex items-center justify-center gap-1 cursor-pointer"
               >
                 <Handshake className="w-3.5 h-3.5" />
                 <span>Draw</span>
               </button>
               <button
                 onClick={() => setIsFlipped(!isFlipped)}
-                className="py-2 px-3 rounded-lg text-xs font-semibold btn-chess-secondary flex items-center justify-center gap-1 cursor-pointer"
+                className="py-2 px-3 rounded-sm text-xs font-semibold btn-chess-secondary flex items-center justify-center gap-1 cursor-pointer"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
                 <span>Flip</span>
@@ -420,7 +420,7 @@ export default function PassAndPlay({
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={handleCopyFen}
-                className="py-2 px-3 rounded-lg bg-theme-panel border border-theme-border hover:bg-theme-sub flex items-center justify-center gap-1.5 text-xs font-semibold text-theme-sec hover:text-white transition-colors cursor-pointer"
+                className="py-2 px-3 rounded-sm bg-theme-panel border border-theme-border hover:bg-theme-sub flex items-center justify-center gap-1.5 text-xs font-semibold text-theme-sec hover:text-white transition-colors cursor-pointer"
                 title="Copy current position FEN"
               >
                 {copiedFen ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-theme-muted" />}
@@ -428,7 +428,7 @@ export default function PassAndPlay({
               </button>
               <button
                 onClick={handleCopyPgn}
-                className="py-2 px-3 rounded-lg bg-theme-panel border border-theme-border hover:bg-theme-sub flex items-center justify-center gap-1.5 text-xs font-semibold text-theme-sec hover:text-white transition-colors cursor-pointer"
+                className="py-2 px-3 rounded-sm bg-theme-panel border border-theme-border hover:bg-theme-sub flex items-center justify-center gap-1.5 text-xs font-semibold text-theme-sec hover:text-white transition-colors cursor-pointer"
                 title="Copy game PGN"
               >
                 {copiedPgn ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-theme-muted" />}
@@ -437,11 +437,11 @@ export default function PassAndPlay({
             </div>
 
             {/* Auto Flip option */}
-            <div className="flex items-center justify-between px-3 py-2 bg-theme-panel rounded-lg border border-theme-border text-xs text-theme-sec">
+            <div className="flex items-center justify-between px-3 py-2 bg-theme-panel rounded-sm border border-theme-border text-xs text-theme-sec">
               <span>Auto-flip on each turn:</span>
               <button
                 onClick={() => setAutoFlip(!autoFlip)}
-                className={`px-3 py-1 rounded-md font-bold transition-all ${
+                className={`px-3 py-1 rounded-xs font-bold transition-all ${
                   autoFlip ? 'bg-theme-accent text-white shadow' : 'bg-theme-btn text-theme-muted hover:text-white'
                 }`}
               >

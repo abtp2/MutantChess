@@ -7,18 +7,110 @@ import { Chess } from 'chess.js';
 import { BOARD_THEMES } from '../lib/themes';
 import { ChessPiece } from '../lib/chessPieces';
 
+function MoveAnnotationBadge({ classification }) {
+  if (!classification) return null;
+  const symbol = classification.symbol || '';
+  const isMultiChar = symbol.length > 1;
+
+  let gradientBg = 'linear-gradient(135deg, #f59e0b, #d97706)';
+  let borderColor = '#fef08a';
+
+  switch (classification.id) {
+    case 'brilliant':
+      gradientBg = 'linear-gradient(135deg, #22d3ee, #0891b2)';
+      borderColor = '#a5f3fc';
+      break;
+    case 'great':
+      gradientBg = 'linear-gradient(135deg, #14b8a6, #0f766e)';
+      borderColor = '#99f6e4';
+      break;
+    case 'best':
+      gradientBg = 'linear-gradient(135deg, #22c55e, #15803d)';
+      borderColor = '#bbf7d0';
+      break;
+    case 'excellent':
+      gradientBg = 'linear-gradient(135deg, #84cc16, #4d7c0f)';
+      borderColor = '#d9f99d';
+      break;
+    case 'good':
+      gradientBg = 'linear-gradient(135deg, #a3e635, #3f6212)';
+      borderColor = '#bef264';
+      break;
+    case 'book':
+      gradientBg = 'linear-gradient(135deg, #d97706, #78350f)';
+      borderColor = '#fde68a';
+      break;
+    case 'inaccuracy':
+      gradientBg = 'linear-gradient(135deg, #fbbf24, #d97706)';
+      borderColor = '#fef3c7';
+      break;
+    case 'mistake':
+      gradientBg = 'linear-gradient(135deg, #f97316, #c2410c)';
+      borderColor = '#fed7aa';
+      break;
+    case 'blunder':
+      gradientBg = 'linear-gradient(135deg, #ef4444, #991b1b)';
+      borderColor = '#fecaca';
+      break;
+    case 'miss':
+      gradientBg = 'linear-gradient(135deg, #ec4899, #9d174d)';
+      borderColor = '#fbcfe8';
+      break;
+    case 'forced':
+      gradientBg = 'linear-gradient(135deg, #64748b, #334155)';
+      borderColor = '#cbd5e1';
+      break;
+    default:
+      if (classification.color) {
+        gradientBg = classification.color;
+      }
+  }
+
+  return (
+    <div
+      title={`${classification.label || 'Move'}: ${classification.description || ''}`}
+      className="absolute top-0.5 right-0.5 z-30 pointer-events-none select-none flex items-center justify-center rounded-full animate-badge-pop"
+      style={{
+        width: '32%',
+        height: '32%',
+        maxWidth: '26px',
+        maxHeight: '26px',
+        minWidth: '18px',
+        minHeight: '18px',
+        background: gradientBg,
+        border: `1.5px solid ${borderColor}`,
+        filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5))',
+      }}
+    >
+      <span
+        className="font-black text-white leading-none text-center"
+        style={{
+          fontSize: isMultiChar ? '10px' : '12px',
+          letterSpacing: isMultiChar ? '-0.5px' : 'normal',
+          textShadow: '0 1px 2px rgba(0, 0, 0, 0.6)',
+        }}
+      >
+        {symbol}
+      </span>
+    </div>
+  );
+}
+
 export default function ChessBoard({
   chess,
   onMove,
   isFlipped = false,
   playerColor = 'w', // 'w', 'b', or null (for free analysis/1v1)
-  themeId = 'icy_sea',
+  themeId = 'stone',
   lastMove = null,
   arrow = null,
   disabled = false,
   onBoardWidthChange,
   premoveQueue = [],
   onCancelPremoves,
+  annotation = null, // { square: 'e7', classification: { symbol: '?!', ... } }
+  annotations = null, // { [square]: classification }
+  customBoardWidth = null,
 }) {
   const containerRef = useRef(null);
   const [boardWidth, setBoardWidth] = useState(480);
@@ -44,9 +136,16 @@ export default function ChessBoard({
       if (containerRef.current) {
         const clientWidth = containerRef.current.clientWidth;
         if (clientWidth > 0) {
-          // On mobile phones, account for viewport height and padding
-          const maxAllowed = Math.min(clientWidth, window.innerHeight - 190);
-          const computed = Math.max(240, Math.min(560, maxAllowed));
+          if (customBoardWidth && typeof customBoardWidth === 'number' && customBoardWidth > 0) {
+            const clamped = Math.min(clientWidth, customBoardWidth);
+            setBoardWidth(clamped);
+            if (onBoardWidthChange) onBoardWidthChange(clamped);
+            return;
+          }
+
+          // Desktop & mobile sizing: allow up to 640px to comfortably fill modern displays
+          const maxAllowed = Math.min(clientWidth, window.innerHeight - 180);
+          const computed = Math.max(240, Math.min(640, maxAllowed));
           setBoardWidth(computed);
           if (onBoardWidthChange) {
             onBoardWidthChange(computed);
@@ -67,7 +166,7 @@ export default function ChessBoard({
       if (ro) ro.disconnect();
       window.removeEventListener('resize', updateWidth);
     };
-  }, [onBoardWidthChange]);
+  }, [onBoardWidthChange, customBoardWidth]);
 
   // Clear selected square whenever board position changes
   useEffect(() => {
@@ -324,13 +423,37 @@ export default function ChessBoard({
 
   const currentFen = chess ? chess.fen() : 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
+  // Custom Square Renderer for move annotation badges (Chess.com style)
+  const renderSquare = ({ piece, square, children }) => {
+    let squareAnnotation = null;
+    if (annotation && annotation.square === square) {
+      squareAnnotation = annotation.classification;
+    } else if (annotations && annotations[square]) {
+      squareAnnotation = annotations[square];
+    }
+
+    return (
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          position: 'relative',
+          ...customSquareStyles[square],
+        }}
+      >
+        {children}
+        {squareAnnotation && <MoveAnnotationBadge classification={squareAnnotation} />}
+      </div>
+    );
+  };
+
   // react-chessboard v5 options object
   const chessboardOptions = {
     position: currentFen,
     boardOrientation: isFlipped ? 'black' : 'white',
     boardStyle: {
-      width: `${boardWidth}px`,
-      height: `${boardWidth}px`,
+      width: '100%',
+      height: '100%',
     },
     darkSquareStyle: { backgroundColor: boardTheme.dark },
     lightSquareStyle: { backgroundColor: boardTheme.light },
@@ -339,6 +462,9 @@ export default function ChessBoard({
     allowDrawingArrows: true,
     animationDurationInMs: 160,
     allowDragging: !disabled,
+    dragActivationDistance: 4,
+    draggingPieceGhostStyle: { opacity: 1 },
+    squareRenderer: renderSquare,
     canDragPiece: ({ square }) => {
       if (disabled || !chess) return false;
       const p = chess.get(square);
@@ -367,7 +493,7 @@ export default function ChessBoard({
       }}
     >
       <div
-        className="rounded-lg overflow-hidden border border-theme-border shrink-0"
+        className="rounded-sm overflow-hidden border border-theme-border shrink-0 box-content"
         style={{ width: boardWidth, height: boardWidth }}
       >
         <Chessboard options={chessboardOptions} />
@@ -376,7 +502,7 @@ export default function ChessBoard({
       {/* Promotion Choice Dialog */}
       {promotionMove && (
         <div className="absolute inset-0 bg-black/75 backdrop-blur-xs flex items-center justify-center z-50 animate-fadeIn">
-          <div className="bg-theme-panel border-2 border-theme-accent rounded-xl p-4 flex flex-col items-center gap-3">
+          <div className="bg-theme-panel border-2 border-theme-accent rounded-sm p-4 flex flex-col items-center gap-3 shadow-2xl">
             <span className="text-xs font-bold text-theme-text uppercase tracking-wider">
               Choose Promotion Piece
             </span>
@@ -390,7 +516,7 @@ export default function ChessBoard({
                 <button
                   key={p.id}
                   onClick={() => handlePromotionSelect(p.id)}
-                  className="w-16 h-20 bg-theme-btn hover:bg-theme-btnHover text-white font-bold rounded-lg border border-theme-border flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-105 group"
+                  className="w-16 h-20 bg-theme-btn hover:bg-theme-btnHover text-white font-bold rounded-sm border border-theme-border flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-105 group"
                 >
                   <div className="w-9 h-9 flex items-center justify-center">
                     <ChessPiece type={p.id} color={promotionColor} className="w-8 h-8" />

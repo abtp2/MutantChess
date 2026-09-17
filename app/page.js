@@ -19,8 +19,8 @@ import {
 
 export default function Home() {
   const [currentView, setCurrentView] = useState('ai');
-  const [boardTheme, setBoardTheme] = useState('icy_sea');
-  const [siteTheme, setSiteTheme] = useState('icy_sea');
+  const [boardTheme, setBoardTheme] = useState('stone');
+  const [siteTheme, setSiteTheme] = useState('stone');
   const [themeModalOpen, setThemeModalOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   
@@ -38,7 +38,7 @@ export default function Home() {
     if (savedSite && savedSite.id) setSiteTheme(savedSite.id);
   }, []);
 
-  const activeSiteTheme = SITE_THEMES.find((s) => s.id === siteTheme) || SITE_THEMES.find((s) => s.id === 'icy_sea') || SITE_THEMES[0];
+  const activeSiteTheme = SITE_THEMES.find((s) => s.id === siteTheme) || SITE_THEMES.find((s) => s.id === 'stone') || SITE_THEMES[0];
 
   // Dynamically update documentElement styles so all CSS variables cascade globally
   useEffect(() => {
@@ -102,7 +102,7 @@ export default function Home() {
               {/* Header with Brand & Close Button */}
               <div className="flex items-center justify-between pb-3 border-b border-theme-border">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-theme-accent flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-sm bg-theme-accent flex items-center justify-center">
                     <svg viewBox="0 0 45 45" className="w-5 h-5 fill-white">
                       <path d="m 22.5,9 c -2.21,0 -4,1.79 -4,4 0,0.89 0.29,1.71 0.78,2.38 C 17.33,16.5 16,18.59 16,21 c 0,2.03 0.94,3.84 2.41,5.03 C 15.41,27.09 11,31.58 11,39.5 l 23,0 c 0,-7.92 -4.41,-12.41 -7.41,-13.47 C 28.06,24.84 29,23.03 29,21 29,18.59 27.67,16.5 25.72,15.38 26.21,14.71 26.5,13.89 26.5,13 c 0,-2.21 -1.79,-4 -4,-4 z" />
                     </svg>
@@ -114,7 +114,7 @@ export default function Home() {
 
                 <button
                   onClick={() => setMobileSidebarOpen(false)}
-                  className="p-1.5 rounded-lg bg-theme-panel text-theme-muted hover:text-white border border-theme-border cursor-pointer"
+                  className="p-1.5 rounded-sm bg-theme-panel text-theme-muted hover:text-white border border-theme-border cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -132,7 +132,7 @@ export default function Home() {
                         setCurrentView(item.id);
                         setMobileSidebarOpen(false);
                       }}
-                      className={`w-full px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center gap-3 cursor-pointer ${
+                      className={`w-full px-4 py-3 rounded-sm text-xs font-bold transition-all flex items-center gap-3 cursor-pointer ${
                         isActive
                           ? 'bg-theme-panel text-theme-accent border border-theme-border'
                           : 'text-theme-sec hover:text-white hover:bg-theme-panel border border-transparent'
@@ -170,7 +170,7 @@ export default function Home() {
                 <button
                   key={item.id}
                   onClick={() => setCurrentView(item.id)}
-                  className={`w-full px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center gap-3 cursor-pointer ${
+                  className={`w-full px-4 py-3 rounded-sm text-xs font-bold transition-all flex items-center gap-3 cursor-pointer ${
                     isActive
                       ? 'bg-theme-panel text-theme-accent border border-theme-border'
                       : 'text-theme-sec hover:text-white hover:bg-theme-panel border border-transparent'

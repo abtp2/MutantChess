@@ -13,7 +13,7 @@ export default function AdvantageGraph({
 
   if (!evaluations || evaluations.length < 2) {
     return (
-      <div className="h-14 bg-theme-sub rounded-lg border border-theme-border flex items-center justify-center text-xs text-theme-muted font-mono select-none">
+      <div className="h-14 bg-theme-sub rounded-sm border border-theme-border flex items-center justify-center text-xs text-theme-muted font-mono select-none">
         Advantage graph will appear after game review.
       </div>
     );
@@ -65,7 +65,7 @@ export default function AdvantageGraph({
       ref={containerRef}
       onClick={handleClick}
       title="Click anywhere to jump to that move"
-      className="relative w-full h-16 bg-[#161513] rounded-lg border border-theme-border overflow-hidden cursor-pointer select-none group shadow-inner"
+      className="relative w-full h-16 bg-[#161513] rounded-sm border border-theme-border overflow-hidden cursor-pointer select-none group shadow-inner"
     >
       {/* Zero equality reference line */}
       <div className="absolute top-1/2 left-0 right-0 h-[1px] bg-white/10 pointer-events-none" />

@@ -39,7 +39,7 @@ export default function ThemeSelector({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-3 sm:p-4 select-none">
-      <div className="bg-theme-panel border border-theme-border rounded-lg max-w-lg w-full overflow-hidden shadow-xl">
+      <div className="bg-theme-panel border border-theme-border rounded-sm max-w-lg w-full overflow-hidden shadow-xl">
         
         {/* Header */}
         <div className="px-4 py-3 bg-theme-sidebar border-b border-theme-border flex items-center justify-between">
@@ -51,7 +51,7 @@ export default function ThemeSelector({
           </div>
           <button
             onClick={onClose}
-            className="text-theme-muted hover:text-white p-1 rounded hover:bg-theme-btn transition-colors"
+            className="text-theme-muted hover:text-white p-1 rounded-xs hover:bg-theme-btn transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -101,7 +101,7 @@ export default function ThemeSelector({
                     <button
                       key={st.id}
                       onClick={() => handleChooseAppTheme(st.id)}
-                      className={`p-2.5 rounded-lg border text-left cursor-pointer transition-colors flex items-center justify-between ${
+                      className={`p-2.5 rounded-sm border text-left cursor-pointer transition-colors flex items-center justify-between ${
                         isSelected
                           ? 'bg-theme-sub border-theme-accent shadow-xs'
                           : 'bg-theme-sub border-theme-border hover:border-theme-borderLight'
@@ -109,7 +109,7 @@ export default function ThemeSelector({
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
                         {/* Mini board swatch preview */}
-                        <div className="w-8 h-8 rounded shrink-0 overflow-hidden grid grid-cols-2 grid-rows-2 border border-theme-border">
+                        <div className="w-8 h-8 rounded-xs shrink-0 overflow-hidden grid grid-cols-2 grid-rows-2 border border-theme-border">
                           <div style={{ backgroundColor: matchingBoard.light }} />
                           <div style={{ backgroundColor: matchingBoard.dark }} />
                           <div style={{ backgroundColor: matchingBoard.dark }} />
@@ -128,7 +128,7 @@ export default function ThemeSelector({
                       </div>
 
                       {isSelected && (
-                        <div className="w-5 h-5 rounded bg-theme-accent flex items-center justify-center shrink-0">
+                        <div className="w-5 h-5 rounded-xs bg-theme-accent flex items-center justify-center shrink-0">
                           <Check className="w-3.5 h-3.5 text-white" />
                         </div>
                       )}
@@ -152,13 +152,13 @@ export default function ThemeSelector({
                     <button
                       key={theme.id}
                       onClick={() => handleChooseBoardTheme(theme.id)}
-                      className={`p-2 rounded-lg border cursor-pointer transition-colors flex flex-col items-center gap-2 text-center ${
+                      className={`p-2 rounded-sm border cursor-pointer transition-colors flex flex-col items-center gap-2 text-center ${
                         isSelected
                           ? 'bg-theme-sub border-theme-accent shadow-xs'
                           : 'bg-theme-sub border-theme-border hover:border-theme-borderLight'
                       }`}
                     >
-                      <div className="w-12 h-12 rounded overflow-hidden grid grid-cols-2 grid-rows-2 border border-theme-border">
+                      <div className="w-12 h-12 rounded-xs overflow-hidden grid grid-cols-2 grid-rows-2 border border-theme-border">
                         <div style={{ backgroundColor: theme.light }} />
                         <div style={{ backgroundColor: theme.dark }} />
                         <div style={{ backgroundColor: theme.dark }} />
