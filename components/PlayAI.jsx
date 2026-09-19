@@ -22,7 +22,7 @@ import {
   Handshake,
   Bot,
   Sliders,
-  Sparkles,
+  BarChart2,
   ChevronDown,
   RefreshCw,
   Trophy,
@@ -32,6 +32,8 @@ import {
   Copy,
   Check,
   Clock,
+  Minus,
+  Plus,
 } from 'lucide-react';
 import BotAvatar from './BotAvatar';
 
@@ -60,8 +62,34 @@ export default function PlayAI({
   const [showBotPicker, setShowBotPicker] = useState(false);
   const [activeTab, setActiveTab] = useState('game'); // 'game' | 'moves' | 'settings'
   const [isFlipped, setIsFlipped] = useState(false);
-  const [boardHeight, setBoardHeight] = useState(480);
+  const [boardHeight, setBoardHeight] = useState(560);
   const [premoveQueue, setPremoveQueue] = useState([]);
+  const [userBoardWidth, setUserBoardWidth] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('mutantchess_board_width');
+      if (saved) {
+        const parsed = parseInt(saved, 10);
+        if (!isNaN(parsed) && parsed >= 320 && parsed <= 1000) return parsed;
+      }
+    }
+    return null;
+  });
+
+  const handleAdjustBoardWidth = (delta) => {
+    const current = userBoardWidth || boardHeight || 560;
+    const nextWidth = Math.max(340, Math.min(1000, current + delta));
+    setUserBoardWidth(nextWidth);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('mutantchess_board_width', nextWidth.toString());
+    }
+  };
+
+  const handleResetBoardWidth = () => {
+    setUserBoardWidth(null);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('mutantchess_board_width');
+    }
+  };
 
   // Clocks - Start timer ONLY after White's first move is played!
   const [playerTime, setPlayerTime] = useState(600);
@@ -312,8 +340,7 @@ export default function PlayAI({
       }
 
       if (!gameResultRef.current) {
-        const nextChess = new Chess();
-        nextChess.loadPgn(currentChess.pgn());
+        const nextChess = new Chess(currentChess.fen());
         let res = null;
 
         // Try primary bot move
@@ -354,9 +381,8 @@ export default function PlayAI({
           setChess(nextChess);
           chessRef.current = nextChess;
           setLastMove({ from: res.from, to: res.to });
-          const newMoves = nextChess.history({ verbose: true });
-          setHistoryMoves(newMoves);
-          setCurrentMoveIndex(newMoves.length - 1);
+          setHistoryMoves((prev) => [...prev, res]);
+          setCurrentMoveIndex((prev) => prev + 1);
           playMoveAudio(res);
 
           if (res.captured && selectedBot.quotes.capture) {
@@ -461,8 +487,7 @@ export default function PlayAI({
   const executePlayerMove = ({ from, to, promotion = 'q' }, baseChess) => {
     const currentActiveChess = baseChess || chessRef.current;
     try {
-      const next = new Chess();
-      next.loadPgn(currentActiveChess.pgn());
+      const next = new Chess(currentActiveChess.fen());
       const res = next.move({ from, to, promotion });
       if (!res) {
         handleCancelPremoves();
@@ -478,9 +503,8 @@ export default function PlayAI({
       setChess(next);
       chessRef.current = next; // Synchronous ref update!
       setLastMove({ from, to });
-      const newMoves = next.history({ verbose: true });
-      setHistoryMoves(newMoves);
-      setCurrentMoveIndex(newMoves.length - 1);
+      setHistoryMoves((prev) => [...prev, res]);
+      setCurrentMoveIndex((prev) => prev + 1);
       playMoveAudio(res);
 
       if (next.isGameOver()) {
@@ -493,10 +517,7 @@ export default function PlayAI({
         return true;
       }
 
-      // Update eval only if there are no pending premoves to keep engine lightweight
-      if (premoveQueueRef.current.length === 0) {
-        updateEval(next.fen());
-      }
+      updateEval(next.fen());
 
       // Mark bot as thinking synchronously
       setIsBotThinking(true);
@@ -528,9 +549,9 @@ export default function PlayAI({
     return executePlayerMove(move, chess);
   };
 
-  // Board move router: handles live moves and queues multiple premoves like Chess.com
+  // Board move router: handles live moves smoothly
   const handleBoardMove = ({ from, to, promotion = 'q' }) => {
-    if (gameResult) return false;
+    if (gameResult || isBotThinkingRef.current) return false;
 
     // If reviewing earlier moves, snap to latest move
     if (historyMoves.length > 0 && currentMoveIndex !== historyMoves.length - 1) {
@@ -539,36 +560,11 @@ export default function PlayAI({
     }
 
     const currentActiveChess = chessRef.current || chess;
-    const isLivePlayerTurn =
-      currentActiveChess.turn() === playerColorRef.current && !isBotThinkingRef.current;
-
-    // If it's the player's live turn AND no premoves are queued, execute directly
-    if (isLivePlayerTurn && premoveQueueRef.current.length === 0) {
-      return executePlayerMove({ from, to, promotion }, currentActiveChess);
-    }
-
-    // Otherwise, this is a PREMOVE! Validate against the virtual board state
-    try {
-      const test = new Chess(displayChess.fen());
-      const res = test.move({ from, to, promotion });
-      if (!res) return false;
-
-      const newPremove = { from, to, promotion };
-      const updated = [...premoveQueueRef.current, newPremove];
-      premoveQueueRef.current = updated;
-      setPremoveQueue(updated);
-
-      // If it is actually the player's turn right now, trigger processing immediately
-      if (currentActiveChess.turn() === playerColorRef.current && !isBotThinkingRef.current) {
-        setTimeout(() => {
-          processNextPremove(currentActiveChess);
-        }, 30);
-      }
-
-      return true;
-    } catch (e) {
+    if (currentActiveChess.turn() !== playerColorRef.current) {
       return false;
     }
+
+    return executePlayerMove({ from, to, promotion }, currentActiveChess);
   };
 
   const startNewGame = (color = playerColor, bot = selectedBot) => {
@@ -659,16 +655,19 @@ export default function PlayAI({
   const isPlayerTurn = chess.turn() === playerColor;
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-2 sm:px-4 py-2 sm:py-5 select-none animate-fadeIn">
+    <div className="w-full max-w-[1680px] mx-auto px-1 sm:px-3 py-1 sm:py-3 select-none animate-fadeIn">
       
-      {/* 2-Column Responsive Layout: Board + Controls */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-8 items-start justify-center">
+      {/* Responsive Layout: Board + Controls */}
+      <div className="flex flex-col lg:flex-row items-center lg:items-start justify-center gap-4 lg:gap-6 w-full">
         
-        {/* Center Column: Board Area */}
-        <div className="lg:col-span-7 xl:col-span-7 flex flex-col items-center">
+        {/* Board Column: Takes maximum remaining space */}
+        <div className="flex-1 flex flex-col items-center min-w-0 w-full">
           
           {/* Top Opponent (Bot) Card */}
-          <div className="w-full max-w-[640px] mb-2 px-3 sm:px-4 py-2 bg-theme-panel rounded-sm border border-theme-border flex items-center justify-between">
+          <div 
+            className="w-full mb-2 px-3 sm:px-4 py-2 bg-theme-panel rounded-sm border border-theme-border flex items-center justify-between transition-all"
+            style={{ width: '100%', maxWidth: boardHeight ? `${boardHeight + 24}px` : '100%' }}
+          >
             <div className="flex items-center gap-3">
               <div
                 onClick={() => setActiveTab('settings')}
@@ -680,13 +679,10 @@ export default function PlayAI({
               <div>
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-sm text-theme-text">
-                    {useCustomElo ? `Bot (${customElo})` : selectedBot.name}
+                    {useCustomElo ? 'Custom Bot' : selectedBot.name}
                   </span>
-                  <span className="text-[11px] font-mono font-bold bg-theme-sub text-theme-sec px-2 py-0.5 rounded-xs border border-theme-border">
-                    {useCustomElo ? customElo : selectedBot.elo}
-                  </span>
-                  <span className="text-[11px] text-theme-muted bg-theme-sub px-2 py-0.5 rounded-xs border border-theme-border font-medium">
-                    Computer
+                  <span className="text-xs font-mono font-bold text-theme-muted">
+                    ({useCustomElo ? customElo : selectedBot.elo})
                   </span>
                 </div>
                 <CapturedPieces
@@ -716,33 +712,36 @@ export default function PlayAI({
             </div>
           </div>
 
-          {/* Board with Eval Bar Row */}
-          <div className="w-full max-w-[640px] flex gap-2 sm:gap-3 items-stretch justify-center">
-            <EvalBar
-              cp={evalScore.cp}
-              mate={evalScore.mate}
+          {/* Board with integrated zero-gap Eval Bar */}
+          <div className="w-full flex justify-center">
+            <ChessBoard
+              evalBar={
+                <EvalBar
+                  cp={evalScore.cp}
+                  mate={evalScore.mate}
+                  isFlipped={isFlipped}
+                  height={boardHeight}
+                />
+              }
+              chess={chess}
+              onMove={handleBoardMove}
+              playerColor={playerColor}
               isFlipped={isFlipped}
-              height={boardHeight}
+              themeId={boardThemeId}
+              lastMove={lastMove}
+              disabled={isBotThinking || gameResult !== null}
+              onBoardWidthChange={setBoardHeight}
+              customBoardWidth={userBoardWidth}
+              premoveQueue={premoveQueue}
+              onCancelPremoves={handleCancelPremoves}
             />
-
-            <div className="flex-1 flex justify-center min-w-0">
-              <ChessBoard
-                chess={displayChess}
-                onMove={handleBoardMove}
-                playerColor={playerColor}
-                isFlipped={isFlipped}
-                themeId={boardThemeId}
-                lastMove={lastMove}
-                disabled={gameResult !== null}
-                onBoardWidthChange={setBoardHeight}
-                premoveQueue={premoveQueue}
-                onCancelPremoves={handleCancelPremoves}
-              />
-            </div>
           </div>
 
           {/* Bottom Player (You) Card */}
-          <div className="w-full max-w-[640px] mt-2 px-3 sm:px-4 py-2 bg-theme-panel rounded-sm border border-theme-border flex items-center justify-between">
+          <div 
+            className="w-full mt-2 px-3 sm:px-4 py-2 bg-theme-panel rounded-sm border border-theme-border flex items-center justify-between transition-all"
+            style={{ width: '100%', maxWidth: boardHeight ? `${boardHeight + 24}px` : '100%' }}
+          >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-sm bg-theme-sub border border-theme-border shrink-0 flex items-center justify-center text-theme-sec">
                 <User className="w-5 h-5" />
@@ -770,10 +769,59 @@ export default function PlayAI({
             </div>
           </div>
 
+          {/* Board Controls Bar: Move indicator, Flip Board, and Board Size Controls */}
+          <div 
+            className="w-full mt-2 px-3 sm:px-4 py-2 bg-theme-panel rounded-sm border border-theme-border flex items-center justify-between text-xs font-mono shadow-xs transition-all"
+            style={{ width: '100%', maxWidth: boardHeight ? `${boardHeight + 24}px` : '100%' }}
+          >
+            {/* Left: Move number & Flip Board button */}
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-1 rounded-xs bg-theme-sub border border-theme-border text-xs font-bold font-mono text-theme-sec">
+                {historyMoves.length > 0 ? `Move ${Math.ceil(historyMoves.length / 2)}` : 'Start Position'}
+              </span>
+              <button
+                onClick={() => setIsFlipped(!isFlipped)}
+                title="Flip board view"
+                className="px-2.5 py-1 rounded-xs bg-theme-sub hover:bg-theme-btn text-theme-sec hover:text-white border border-theme-border hover:border-theme-borderLight transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-sans font-semibold"
+              >
+                <RefreshCw className="w-3.5 h-3.5 text-theme-sec" />
+                <span>Flip</span>
+              </button>
+            </div>
+
+            {/* Right: Board Size Controls (- Auto / 400px +) */}
+            <div className="flex items-center gap-1 bg-theme-sub px-2 py-0.5 rounded-xs border border-theme-border">
+              <span className="text-[11px] font-sans text-theme-muted font-semibold mr-0.5 hidden sm:inline">Size:</span>
+              <button
+                onClick={() => handleAdjustBoardWidth(-30)}
+                title="Decrease board size"
+                className="p-1 rounded-xs hover:bg-theme-panel text-theme-muted hover:text-white transition-colors cursor-pointer"
+              >
+                <Minus className="w-3 h-3" />
+              </button>
+              <button
+                onClick={handleResetBoardWidth}
+                title="Fit to screen (Auto)"
+                className={`text-[11px] font-mono px-2 py-0.5 rounded-xs transition-colors cursor-pointer ${
+                  userBoardWidth === null ? 'bg-theme-accent text-white font-bold' : 'text-theme-sec hover:text-white'
+                }`}
+              >
+                {userBoardWidth ? `${userBoardWidth}px` : 'Auto'}
+              </button>
+              <button
+                onClick={() => handleAdjustBoardWidth(30)}
+                title="Increase board size"
+                className="p-1 rounded-xs hover:bg-theme-panel text-theme-muted hover:text-white transition-colors cursor-pointer"
+              >
+                <Plus className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+
         </div>
 
         {/* Right Column: Sidebar with Game / Moves / Settings Tabs */}
-        <div className="lg:col-span-5 xl:col-span-5 flex flex-col gap-4 w-full">
+        <div className="w-full lg:w-[360px] xl:w-[390px] shrink-0 flex flex-col gap-3">
           
           {/* Top Tabs */}
           <div className="flex border-b border-theme-border text-sm font-semibold">
@@ -794,7 +842,7 @@ export default function PlayAI({
                 activeTab === 'moves' ? 'text-white font-bold' : 'text-theme-muted hover:text-white'
               }`}
             >
-              Moves {historyMoves.length > 0 ? `(${historyMoves.length})` : ''}
+              Moves {historyMoves.length > 0 ? `(${Math.ceil(historyMoves.length / 2)})` : ''}
               {activeTab === 'moves' && (
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-theme-accent" />
               )}
@@ -866,11 +914,22 @@ export default function PlayAI({
                   <div className="flex flex-col gap-2 mt-3">
                     {onAnalyzeGame && historyMoves.length > 0 && (
                       <button
-                        onClick={() => onAnalyzeGame(historyMoves)}
+                        onClick={() =>
+                          onAnalyzeGame(historyMoves, null, {
+                            white:
+                              playerColor === 'w'
+                                ? { username: 'You', rating: 'Player', avatar: null }
+                                : { username: selectedBot.name, rating: selectedBot.elo, avatar: selectedBot.avatar },
+                            black:
+                              playerColor === 'w'
+                                ? { username: selectedBot.name, rating: selectedBot.elo, avatar: selectedBot.avatar }
+                                : { username: 'You', rating: 'Player', avatar: null },
+                          })
+                        }
                         className="w-full py-2.5 px-3 rounded-sm font-bold text-xs btn-chess-green flex items-center justify-center gap-1.5 cursor-pointer"
                       >
-                        <Sparkles className="w-4 h-4" />
-                        <span>Review Game with Stockfish</span>
+                        <BarChart2 className="w-4 h-4" />
+                        <span>Review Game</span>
                       </button>
                     )}
 
@@ -905,76 +964,81 @@ export default function PlayAI({
                 <span>New Game</span>
               </button>
 
-              {/* 3-Column Control Grid with generous gaps */}
-              <div className="grid grid-cols-3 gap-3">
+              {/* 3-Column Control Grid: Resign, Draw, Flip (Small-Medium size, current UI theme color) */}
+              <div className="grid grid-cols-3 gap-2">
                 <button
                   onClick={() => handleGameOver('loss', 'You resigned the game.', 'resignation')}
                   disabled={gameResult !== null}
-                  className="py-4 px-2 rounded-sm bg-theme-panel border border-theme-border hover:bg-theme-sub disabled:opacity-40 flex flex-col items-center justify-center gap-2 text-theme-sec hover:text-white transition-colors cursor-pointer"
+                  className="py-1.5 px-2 sm:px-2.5 rounded-sm btn-chess-danger disabled:opacity-40 flex items-center justify-center gap-1.5 cursor-pointer shadow-xs text-xs font-bold"
+                  title="Resign the current game"
                 >
-                  <Flag className="w-5 h-5 text-theme-muted" />
-                  <span className="text-xs font-semibold">Resign</span>
+                  <Flag className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">Resign</span>
                 </button>
                 <button
                   onClick={() => handleGameOver('draw', 'Draw agreed.', 'draw')}
                   disabled={gameResult !== null}
-                  className="py-4 px-2 rounded-sm bg-theme-panel border border-theme-border hover:bg-theme-sub disabled:opacity-40 flex flex-col items-center justify-center gap-2 text-theme-sec hover:text-white transition-colors cursor-pointer"
+                  className="py-1.5 px-2 sm:px-2.5 rounded-sm btn-chess-draw disabled:opacity-40 flex items-center justify-center gap-1.5 cursor-pointer shadow-xs text-xs font-bold"
+                  title="Offer a draw"
                 >
-                  <Handshake className="w-5 h-5 text-theme-muted" />
-                  <span className="text-xs font-semibold">Draw</span>
+                  <Handshake className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">Draw</span>
                 </button>
                 <button
                   onClick={() => setIsFlipped(!isFlipped)}
-                  className="py-4 px-2 rounded-sm bg-theme-panel border border-theme-border hover:bg-theme-sub flex flex-col items-center justify-center gap-2 text-theme-sec hover:text-white transition-colors cursor-pointer"
+                  className="py-1.5 px-2 sm:px-2.5 rounded-sm btn-chess-flip flex items-center justify-center gap-1.5 cursor-pointer shadow-xs text-xs font-bold"
+                  title="Flip board orientation"
                 >
-                  <RefreshCw className="w-5 h-5 text-theme-muted" />
-                  <span className="text-xs font-semibold">Flip Board</span>
+                  <RefreshCw className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">Flip</span>
                 </button>
               </div>
 
               {/* Copy FEN / PGN Buttons */}
-              <div className="grid grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={handleCopyFen}
-                  className="py-2.5 px-3 rounded-sm bg-theme-panel border border-theme-border hover:bg-theme-sub flex items-center justify-center gap-2 text-xs font-semibold text-theme-sec hover:text-white transition-colors cursor-pointer"
+                  className="py-2 px-3 rounded-sm btn-chess-utility flex items-center justify-center gap-2 text-xs font-semibold cursor-pointer"
                   title="Copy current position FEN to clipboard"
                 >
-                  {copiedFen ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-theme-muted" />}
+                  {copiedFen ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-theme-muted" />}
                   <span>{copiedFen ? 'FEN Copied!' : 'Copy FEN'}</span>
                 </button>
                 <button
                   onClick={handleCopyPgn}
-                  className="py-2.5 px-3 rounded-sm bg-theme-panel border border-theme-border hover:bg-theme-sub flex items-center justify-center gap-2 text-xs font-semibold text-theme-sec hover:text-white transition-colors cursor-pointer"
+                  className="py-2 px-3 rounded-sm btn-chess-utility flex items-center justify-center gap-2 text-xs font-semibold cursor-pointer"
                   title="Copy game PGN to clipboard"
                 >
-                  {copiedPgn ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-theme-muted" />}
+                  {copiedPgn ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-theme-muted" />}
                   <span>{copiedPgn ? 'PGN Copied!' : 'Copy PGN'}</span>
                 </button>
               </div>
 
               {/* Play as White / Black Segmented Toggle */}
               <div className="flex items-center justify-between py-1">
-                <span className="text-xs text-theme-muted font-medium">Play as:</span>
-                <div className="flex gap-2">
+                <span className="text-xs text-theme-sec font-semibold">Play as:</span>
+                <div className="flex bg-theme-sidebar p-1 rounded-sm border border-theme-border gap-1">
                   <button
                     onClick={() => { setPlayerColor('w'); startNewGame('w', selectedBot); }}
-                    className={`px-5 py-2 rounded-sm text-xs font-bold transition-all cursor-pointer ${
+                    className={`px-4 py-1.5 rounded-xs text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                       playerColor === 'w'
-                        ? 'bg-transparent text-white border-2 border-theme-accent'
-                        : 'bg-theme-panel text-theme-muted hover:text-white border border-theme-border'
+                        ? 'bg-white text-gray-950 shadow-xs'
+                        : 'text-theme-muted hover:text-white hover:bg-theme-panel'
                     }`}
                   >
-                    White
+                    <span className="w-2.5 h-2.5 rounded-full bg-white border border-gray-400" />
+                    <span>White</span>
                   </button>
                   <button
                     onClick={() => { setPlayerColor('b'); startNewGame('b', selectedBot); }}
-                    className={`px-5 py-2 rounded-sm text-xs font-bold transition-all cursor-pointer ${
+                    className={`px-4 py-1.5 rounded-xs text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                       playerColor === 'b'
-                        ? 'bg-transparent text-white border-2 border-theme-accent'
-                        : 'bg-theme-panel text-theme-muted hover:text-white border border-theme-border'
+                        ? 'bg-[#181614] text-white border border-[#4a4742] shadow-xs'
+                        : 'text-theme-muted hover:text-white hover:bg-theme-panel'
                     }`}
                   >
-                    Black
+                    <span className="w-2.5 h-2.5 rounded-full bg-gray-900 border border-gray-600" />
+                    <span>Black</span>
                   </button>
                 </div>
               </div>
@@ -1007,27 +1071,27 @@ export default function PlayAI({
                   onClick={() => onAnalyzeGame(historyMoves)}
                   className="w-full py-2.5 px-3 rounded-sm font-bold text-xs btn-chess-green flex items-center justify-center gap-1.5 cursor-pointer"
                 >
-                  <Sparkles className="w-4 h-4" />
+                  <BarChart2 className="w-4 h-4" />
                   <span>Analyze Move History</span>
                 </button>
               )}
 
               {/* Copy FEN / PGN Buttons in Moves Tab */}
-              <div className="grid grid-cols-2 gap-2.5 pt-1">
+              <div className="grid grid-cols-2 gap-2 pt-1">
                 <button
                   onClick={handleCopyFen}
-                  className="py-2.5 px-3 rounded-sm bg-theme-panel border border-theme-border hover:bg-theme-sub flex items-center justify-center gap-2 text-xs font-semibold text-theme-sec hover:text-white transition-colors cursor-pointer"
+                  className="py-2 px-3 rounded-sm btn-chess-utility flex items-center justify-center gap-2 text-xs font-semibold cursor-pointer"
                   title="Copy current position FEN to clipboard"
                 >
-                  {copiedFen ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-theme-muted" />}
+                  {copiedFen ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-theme-muted" />}
                   <span>{copiedFen ? 'FEN Copied!' : 'Copy FEN'}</span>
                 </button>
                 <button
                   onClick={handleCopyPgn}
-                  className="py-2.5 px-3 rounded-sm bg-theme-panel border border-theme-border hover:bg-theme-sub flex items-center justify-center gap-2 text-xs font-semibold text-theme-sec hover:text-white transition-colors cursor-pointer"
+                  className="py-2 px-3 rounded-sm btn-chess-utility flex items-center justify-center gap-2 text-xs font-semibold cursor-pointer"
                   title="Copy game PGN to clipboard"
                 >
-                  {copiedPgn ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-theme-muted" />}
+                  {copiedPgn ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-theme-muted" />}
                   <span>{copiedPgn ? 'PGN Copied!' : 'Copy PGN'}</span>
                 </button>
               </div>
@@ -1060,8 +1124,8 @@ export default function PlayAI({
                         <div className="text-[10px] text-theme-muted">{bot.title}</div>
                       </div>
                     </div>
-                    <span className="font-mono text-xs font-bold text-theme-accent bg-theme-sidebar px-2 py-1 rounded-xs border border-theme-border">
-                      {bot.elo} Elo
+                    <span className="font-mono text-xs font-semibold text-theme-muted">
+                      ({bot.elo})
                     </span>
                   </button>
                 ))}
@@ -1071,8 +1135,8 @@ export default function PlayAI({
               <div className="pt-3 border-t border-theme-border space-y-2">
                 <div className="flex items-center justify-between text-xs text-theme-sec">
                   <span className="font-semibold">Custom Strength:</span>
-                  <span className="font-mono font-bold text-theme-accent bg-theme-sidebar px-2 py-0.5 rounded-xs border border-theme-border">
-                    {customElo} Elo
+                  <span className="font-mono font-bold text-theme-sec">
+                    ({customElo})
                   </span>
                 </div>
                 <input

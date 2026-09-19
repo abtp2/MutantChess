@@ -12,11 +12,7 @@ export default function AdvantageGraph({
   const containerRef = useRef(null);
 
   if (!evaluations || evaluations.length < 2) {
-    return (
-      <div className="h-14 bg-theme-sub rounded-sm border border-theme-border flex items-center justify-center text-xs text-theme-muted font-mono select-none">
-        Advantage graph will appear after game review.
-      </div>
-    );
+    return null;
   }
 
   const totalPoints = evaluations.length;

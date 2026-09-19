@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Volume2, VolumeX, Settings, Bot, Sparkles, Users, DownloadCloud, Menu, X } from 'lucide-react';
+import { Volume2, VolumeX, Settings, Menu } from 'lucide-react';
 import { getSoundEnabled, setSoundEnabled } from '../lib/audio';
 
 export default function Navbar({

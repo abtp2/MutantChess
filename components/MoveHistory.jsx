@@ -3,6 +3,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import ClassificationIcon from './ClassificationIcon';
 
 export default function MoveHistory({
   moves = [],
@@ -50,15 +51,8 @@ export default function MoveHistory({
       >
         <span>{san}</span>
         {classification && (
-          <span
-            className="text-[10px] px-1 rounded-xs font-bold ml-1"
-            style={{
-              backgroundColor: classification.bg,
-              color: classification.color,
-            }}
-            title={classification.label}
-          >
-            {classification.symbol}
+          <span className="ml-1 shrink-0" title={classification.label}>
+            <ClassificationIcon classification={classification} size={15} />
           </span>
         )}
       </button>
@@ -69,7 +63,7 @@ export default function MoveHistory({
     <div className="flex flex-col h-full bg-theme-panel rounded-sm border border-theme-border overflow-hidden select-none">
       {/* Header */}
       <div className="px-3 py-2 bg-theme-sidebar border-b border-theme-border flex items-center justify-between text-xs font-bold text-theme-muted uppercase tracking-wider">
-        <span>Move List ({moves.length})</span>
+        <span>Move List ({Math.ceil(moves.length / 2)})</span>
       </div>
 
       {/* Move list */}
@@ -78,8 +72,8 @@ export default function MoveHistory({
         className="flex-1 overflow-y-auto p-1 space-y-0.5 custom-scrollbar min-h-[140px]"
       >
         {pairs.length === 0 ? (
-          <div className="h-full flex items-center justify-center text-xs text-theme-muted italic p-4">
-            Game moves will appear here.
+          <div className="h-full flex items-center justify-center text-xs text-theme-muted p-4">
+            No moves played yet.
           </div>
         ) : (
           pairs.map((pair) => (
@@ -106,28 +100,28 @@ export default function MoveHistory({
         <button
           onClick={onFirst}
           title="First move"
-          className="p-1.5 rounded-xs bg-theme-btn hover:bg-theme-btnHover text-theme-sec hover:text-white border border-theme-border transition-colors"
+          className="p-1.5 rounded-xs bg-theme-panel hover:bg-theme-btn text-theme-sec hover:text-white border border-theme-border hover:border-theme-borderLight transition-colors cursor-pointer"
         >
           <ChevronsLeft className="w-4 h-4" />
         </button>
         <button
           onClick={onPrev}
           title="Previous move"
-          className="p-1.5 rounded-xs bg-theme-btn hover:bg-theme-btnHover text-theme-sec hover:text-white border border-theme-border transition-colors"
+          className="p-1.5 rounded-xs bg-theme-panel hover:bg-theme-btn text-theme-sec hover:text-white border border-theme-border hover:border-theme-borderLight transition-colors cursor-pointer"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
         <button
           onClick={onNext}
           title="Next move"
-          className="p-1.5 rounded-xs bg-theme-btn hover:bg-theme-btnHover text-theme-sec hover:text-white border border-theme-border transition-colors"
+          className="p-1.5 rounded-xs bg-theme-panel hover:bg-theme-btn text-theme-sec hover:text-white border border-theme-border hover:border-theme-borderLight transition-colors cursor-pointer"
         >
           <ChevronRight className="w-4 h-4" />
         </button>
         <button
           onClick={onLast}
           title="Last move"
-          className="p-1.5 rounded-xs bg-theme-btn hover:bg-theme-btnHover text-theme-sec hover:text-white border border-theme-border transition-colors"
+          className="p-1.5 rounded-xs bg-theme-panel hover:bg-theme-btn text-theme-sec hover:text-white border border-theme-border hover:border-theme-borderLight transition-colors cursor-pointer"
         >
           <ChevronsRight className="w-4 h-4" />
         </button>

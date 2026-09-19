@@ -8,7 +8,7 @@ import AnalysisBoard from '../components/AnalysisBoard';
 import PassAndPlay from '../components/PassAndPlay';
 import GameImporter from '../components/GameImporter';
 import ThemeSelector from '../components/ThemeSelector';
-import { Monitor, Users, FileText, Sparkles, X } from 'lucide-react';
+import { Monitor, Users, FileText, BarChart2, X } from 'lucide-react';
 import {
   getSavedBoardTheme,
   getSavedSiteTheme,
@@ -27,6 +27,7 @@ export default function Home() {
   const [analysisPayload, setAnalysisPayload] = useState({
     moves: [],
     fen: null,
+    gameInfo: null,
     id: 'default',
   });
 
@@ -54,10 +55,11 @@ export default function Home() {
     setBoardTheme(themeId);
   };
 
-  const handleOpenAnalysisWithGame = (moves, fen = null) => {
+  const handleOpenAnalysisWithGame = (moves, fen = null, gameInfo = null) => {
     setAnalysisPayload({
       moves,
       fen,
+      gameInfo,
       id: `analysis_${Date.now()}`,
     });
     setCurrentView('analysis');
@@ -67,7 +69,7 @@ export default function Home() {
 
   const leftNavItems = [
     { id: 'ai', label: 'Play vs Computer', icon: Monitor },
-    { id: 'analysis', label: 'Analysis & Review', icon: Sparkles },
+    { id: 'analysis', label: 'Analysis & Review', icon: BarChart2 },
     { id: '1v1', label: 'Pass & Play', icon: Users },
     { id: 'import', label: 'Import Game', icon: FileText },
   ];
@@ -145,20 +147,12 @@ export default function Home() {
                 })}
               </div>
             </div>
-
-            <div className="space-y-4 pt-4 border-t border-theme-border">
-              {/* Footer */}
-              <div className="text-[11px] text-theme-muted font-sans select-none px-1">
-                <div className="font-semibold text-theme-text">MutantChess</div>
-                <div>&copy; 2026 All rights reserved.</div>
-              </div>
-            </div>
           </div>
         </div>
       )}
 
       {/* Main Container with Desktop Left Sidebar */}
-      <div className="flex-1 flex w-full max-w-[1440px] mx-auto px-2 sm:px-4">
+      <div className="flex-1 flex w-full max-w-[1760px] mx-auto px-2 sm:px-4">
         
         {/* Left Sidebar on Desktop */}
         <aside className="hidden lg:flex flex-col justify-between w-56 xl:w-60 shrink-0 py-5 pr-5 border-r border-theme-border select-none">
@@ -182,14 +176,6 @@ export default function Home() {
               );
             })}
           </div>
-
-          <div className="space-y-4">
-            {/* Footer Copyright */}
-            <div className="text-[11px] text-theme-muted font-sans select-none px-1">
-              <div className="font-semibold text-theme-text">MutantChess</div>
-              <div>&copy; 2026 All rights reserved.</div>
-            </div>
-          </div>
         </aside>
 
         {/* Main Workspace Area */}
@@ -206,7 +192,9 @@ export default function Home() {
               key={analysisPayload.id}
               initialMoves={analysisPayload.moves}
               initialFen={analysisPayload.fen}
+              initialGameInfo={analysisPayload.gameInfo}
               boardThemeId={boardTheme}
+              onOpenImporter={() => setCurrentView('import')}
             />
           )}
 

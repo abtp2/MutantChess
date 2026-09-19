@@ -10,6 +10,7 @@ lerna-debug.log*
 # Dependencies
 node_modules/
 .pnpm-store/
+antigravity_helpers/
 
 # Next.js Build Output
 .next/

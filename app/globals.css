@@ -58,40 +58,88 @@ body {
   box-shadow: none !important;
 }
 
-/* Primary Theme Button styling (flat, crisp, professional) */
+/* Primary Action Button (CTA) - High-intent actions: Play, Analyze, Review, New Game */
 .btn-chess-green {
-  background-color: var(--theme-accent);
-  color: var(--theme-accent-text);
-  border: 1px solid transparent;
+  background-color: var(--theme-accent, #81b64c);
+  color: #ffffff;
+  font-weight: 700;
+  border: 1px solid #6c9e3b;
   border-radius: 3px;
   transition: all 0.15s ease-in-out;
 }
 
 .btn-chess-green:hover:not(:disabled) {
-  background-color: var(--theme-accent-hover);
-  filter: brightness(1.05);
+  background-color: var(--theme-accent-hover, #95bb58);
+  border-color: #7bb446;
 }
 
 .btn-chess-green:active:not(:disabled) {
   transform: translateY(1px);
 }
 
-/* Secondary Theme Button styling (flat, clean borders) */
+/* Secondary UI Action Button - Refined workbench tools */
 .btn-chess-secondary {
-  background-color: var(--theme-btn-bg);
-  color: var(--theme-text-sec);
-  border: 1px solid var(--theme-border);
+  background-color: var(--theme-panel, #262421);
+  color: var(--theme-text-sec, #c3c2c1);
+  font-weight: 600;
+  border: 1px solid var(--theme-border, #3d3a36);
   border-radius: 3px;
   transition: all 0.15s ease-in-out;
 }
 
 .btn-chess-secondary:hover:not(:disabled) {
-  background-color: var(--theme-btn-hover);
-  color: var(--theme-text);
-  border-color: var(--theme-border-light);
+  background-color: var(--theme-btn-bg, #383531);
+  color: #ffffff;
+  border-color: var(--theme-border-light, #4a4742);
 }
 
 .btn-chess-secondary:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+/* Resign, Draw, Flip Buttons - Solid, matching the current UI theme color */
+.btn-chess-danger,
+.btn-chess-draw,
+.btn-chess-flip {
+  background-color: var(--theme-accent, #81b64c);
+  color: var(--theme-accent-text, #ffffff);
+  font-weight: 700;
+  border: 1px solid var(--theme-accent-shadow, #6c9e3b);
+  border-radius: 3px;
+  transition: all 0.15s ease-in-out;
+}
+
+.btn-chess-danger:hover:not(:disabled),
+.btn-chess-draw:hover:not(:disabled),
+.btn-chess-flip:hover:not(:disabled) {
+  background-color: var(--theme-accent-hover, #95bb58);
+  border-color: var(--theme-accent, #81b64c);
+  filter: brightness(1.08);
+}
+
+.btn-chess-danger:active:not(:disabled),
+.btn-chess-draw:active:not(:disabled),
+.btn-chess-flip:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+/* Utility Tool Button - Flip, Reset, Copy */
+.btn-chess-utility {
+  background-color: var(--theme-sub, #21201d);
+  color: var(--theme-text-sec, #c3c2c1);
+  font-weight: 600;
+  border: 1px solid var(--theme-border, #3d3a36);
+  border-radius: 3px;
+  transition: all 0.15s ease-in-out;
+}
+
+.btn-chess-utility:hover:not(:disabled) {
+  background-color: var(--theme-btn-bg, #383531);
+  color: #ffffff;
+  border-color: var(--theme-border-light, #4a4742);
+}
+
+.btn-chess-utility:active:not(:disabled) {
   transform: translateY(1px);
 }
 

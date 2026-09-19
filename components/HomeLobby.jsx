@@ -1,6 +1,6 @@
 // Home / Lobby View directly styled after UI_reference.png
 import React, { useState } from 'react';
-import { Compass, Users, Bot, Sparkles, DownloadCloud, Share2, X, RefreshCw } from 'lucide-react';
+import { Compass, Users, Bot, BarChart2, DownloadCloud, Share2, X, RefreshCw } from 'lucide-react';
 import ChessBoard from './ChessBoard';
 import { Chess } from 'chess.js';
 import { BOTS } from '../lib/bots';
@@ -186,7 +186,7 @@ export default function HomeLobby({
                 className="flex items-center gap-3.5 px-5 py-4 rounded-sm bg-[#232936] hover:bg-[#2d3546] border border-[#333d50] hover:border-purple-500/50 transition-all text-left shadow-lg group hover:translate-y-[-2px]"
               >
                 <div className="w-10 h-10 rounded-sm bg-[#181c26] flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform border border-[#333e52]">
-                  <Sparkles className="w-5 h-5 text-purple-400" />
+                  <BarChart2 className="w-5 h-5 text-purple-400" />
                 </div>
                 <div>
                   <h4 className="font-bold text-sm sm:text-base text-gray-100 group-hover:text-purple-400 transition-colors">

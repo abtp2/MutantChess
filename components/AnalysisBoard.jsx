@@ -10,7 +10,7 @@ import AdvantageGraph from './AdvantageGraph';
 import { MOVE_CLASSIFICATIONS, analyzeFullGame } from '../lib/analysisEngine.js';
 import { stockfishService } from '../lib/stockfishService.js';
 import {
-  Sparkles,
+  BarChart2,
   CheckCircle2,
   Cpu,
   RefreshCw,
@@ -29,11 +29,18 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
+import CapturedPieces from './CapturedPieces';
+import ClassificationIcon from './ClassificationIcon';
+import { fetchPlayerAvatar } from '../lib/gameImporter';
+
 export default function AnalysisBoard({
   initialMoves = [],
   initialFen = null,
+  initialGameInfo = null,
   boardThemeId = 'stone',
+  onOpenImporter,
 }) {
+  const [gameInfo, setGameInfo] = useState(initialGameInfo);
   const [moves, setMoves] = useState(initialMoves);
   const [currentStep, setCurrentStep] = useState(() => (initialMoves && initialMoves.length > 0 ? initialMoves.length - 1 : -1));
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -41,9 +48,40 @@ export default function AnalysisBoard({
   const [reviewData, setReviewData] = useState(null);
   const [liveEval, setLiveEval] = useState({ cp: 0, mate: null, depth: 0, bestMove: null, pv: '' });
   const [bestMoveArrow, setBestMoveArrow] = useState(null);
+
+  useEffect(() => {
+    setGameInfo(initialGameInfo);
+  }, [initialGameInfo]);
+
+  // Fetch missing avatars for players if imported
+  useEffect(() => {
+    if (!gameInfo) return;
+
+    if (gameInfo.white?.username && !gameInfo.white?.avatar) {
+      fetchPlayerAvatar(gameInfo.white.username, gameInfo.site).then((avatar) => {
+        if (avatar) {
+          setGameInfo((prev) => (prev ? {
+            ...prev,
+            white: { ...prev.white, avatar },
+          } : prev));
+        }
+      });
+    }
+
+    if (gameInfo.black?.username && !gameInfo.black?.avatar) {
+      fetchPlayerAvatar(gameInfo.black.username, gameInfo.site).then((avatar) => {
+        if (avatar) {
+          setGameInfo((prev) => (prev ? {
+            ...prev,
+            black: { ...prev.black, avatar },
+          } : prev));
+        }
+      });
+    }
+  }, [gameInfo?.white?.username, gameInfo?.black?.username, gameInfo?.site]);
   const [showBestLine, setShowBestLine] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
-  const [boardHeight, setBoardHeight] = useState(480);
+  const [boardHeight, setBoardHeight] = useState(560);
   const [activeTab, setActiveTab] = useState('review'); // 'review' | 'moves' | 'graph'
   const [copiedFen, setCopiedFen] = useState(false);
   const [copiedPgn, setCopiedPgn] = useState(false);
@@ -52,15 +90,15 @@ export default function AnalysisBoard({
       const saved = localStorage.getItem('mutantchess_board_width');
       if (saved) {
         const parsed = parseInt(saved, 10);
-        if (!isNaN(parsed) && parsed >= 320 && parsed <= 720) return parsed;
+        if (!isNaN(parsed) && parsed >= 320 && parsed <= 1000) return parsed;
       }
     }
     return null;
   });
 
   const handleAdjustBoardWidth = (delta) => {
-    const current = userBoardWidth || boardHeight || 540;
-    const nextWidth = Math.max(340, Math.min(680, current + delta));
+    const current = userBoardWidth || boardHeight || 560;
+    const nextWidth = Math.max(340, Math.min(1000, current + delta));
     setUserBoardWidth(nextWidth);
     if (typeof window !== 'undefined') {
       localStorage.setItem('mutantchess_board_width', nextWidth.toString());
@@ -244,10 +282,10 @@ export default function AnalysisBoard({
     try {
       const results = await analyzeFullGame(moves, (prog) => {
         setAnalysisProgress(prog);
-      }, 16); // Deep tactical depth 16 for grandmaster-level comprehension
+      }, 12);
 
       setReviewData(results);
-      if (results && (results.stats.w.brilliant > 0 || results.stats.b.brilliant > 0)) {
+      if (results && (results.stats?.w?.brilliant > 0 || results.stats?.b?.brilliant > 0)) {
         confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
       }
     } catch (err) {
@@ -272,170 +310,260 @@ export default function AnalysisBoard({
       }
     : null;
 
+  // Calculate captured pieces dynamically for the active board position
+  const capturedPieces = React.useMemo(() => {
+    const board = chess.board();
+    const starting = { p: 8, n: 2, b: 2, r: 2, q: 1 };
+    const currentWhite = { p: 0, n: 0, b: 0, r: 0, q: 0 };
+    const currentBlack = { p: 0, n: 0, b: 0, r: 0, q: 0 };
+
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const piece = board[r][c];
+        if (piece && piece.type !== 'k') {
+          if (piece.color === 'w') currentWhite[piece.type]++;
+          else if (piece.color === 'b') currentBlack[piece.type]++;
+        }
+      }
+    }
+
+    const capturedByWhite = [];
+    const capturedByBlack = [];
+
+    ['q', 'r', 'b', 'n', 'p'].forEach((type) => {
+      const missingBlack = Math.max(0, starting[type] - currentBlack[type]);
+      for (let i = 0; i < missingBlack; i++) {
+        capturedByWhite.push({ type, color: 'b' });
+      }
+      const missingWhite = Math.max(0, starting[type] - currentWhite[type]);
+      for (let i = 0; i < missingWhite; i++) {
+        capturedByBlack.push({ type, color: 'w' });
+      }
+    });
+
+    return { capturedByWhite, capturedByBlack };
+  }, [chess]);
+
+  const topPlayer = isFlipped
+    ? {
+        name: gameInfo?.white?.username || 'White',
+        rating: gameInfo?.white?.rating,
+        avatar: gameInfo?.white?.avatar,
+        accuracy: reviewData?.whiteAccuracy,
+        color: 'w',
+        captured: capturedPieces.capturedByWhite,
+      }
+    : {
+        name: gameInfo?.black?.username || 'Black',
+        rating: gameInfo?.black?.rating,
+        avatar: gameInfo?.black?.avatar,
+        accuracy: reviewData?.blackAccuracy,
+        color: 'b',
+        captured: capturedPieces.capturedByBlack,
+      };
+
+  const bottomPlayer = isFlipped
+    ? {
+        name: gameInfo?.black?.username || 'Black',
+        rating: gameInfo?.black?.rating,
+        avatar: gameInfo?.black?.avatar,
+        accuracy: reviewData?.blackAccuracy,
+        color: 'b',
+        captured: capturedPieces.capturedByBlack,
+      }
+    : {
+        name: gameInfo?.white?.username || 'White',
+        rating: gameInfo?.white?.rating,
+        avatar: gameInfo?.white?.avatar,
+        accuracy: reviewData?.whiteAccuracy,
+        color: 'w',
+        captured: capturedPieces.capturedByWhite,
+      };
+
   return (
-    <div className="w-full max-w-6xl mx-auto px-2 sm:px-4 py-2 sm:py-5 select-none animate-fadeIn">
+    <div className="w-full max-w-[1680px] mx-auto px-1 sm:px-3 py-1 sm:py-3 select-none animate-fadeIn">
       
-      {/* 2-Column Responsive Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-start justify-center">
+      {/* Responsive Layout: Board Area + Sidebar */}
+      <div className="flex flex-col lg:flex-row items-center lg:items-start justify-center gap-4 lg:gap-6 w-full">
         
-        {/* Left Column: Board Area */}
-        <div className="lg:col-span-7 xl:col-span-8 flex flex-col items-center w-full">
+        {/* Left Column: Board Area - Takes maximum remaining space */}
+        <div className="flex-1 flex flex-col items-center min-w-0 w-full">
           
-          {/* Top Player (Black) Card */}
-          <div className="w-full max-w-[680px] mb-2 px-3 py-2 bg-theme-panel rounded-sm border border-theme-border flex items-center justify-between shadow-xs">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-sm bg-theme-btn border border-theme-border flex items-center justify-center font-bold text-xs text-white">
-                {isFlipped ? 'W' : 'B'}
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-sm text-theme-text">
-                    {isFlipped ? 'White Player' : 'Black Player'}
-                  </span>
-                  {reviewData && (
-                    <span className="text-[11px] font-mono font-bold bg-theme-btn text-theme-accent px-2 py-0.5 rounded-xs border border-theme-border flex items-center gap-1.5">
-                      <span>{isFlipped ? `${reviewData.whiteAccuracy}%` : `${reviewData.blackAccuracy}%`}</span>
-                      {(isFlipped ? reviewData.whiteEstimatedElo : reviewData.blackEstimatedElo) && (
-                        <span className="text-theme-muted font-normal">
-                          · ~{isFlipped ? reviewData.whiteEstimatedElo : reviewData.blackEstimatedElo} Elo
-                        </span>
-                      )}
-                    </span>
-                  )}
-                </div>
-                <span className="text-[11px] text-theme-muted">
-                  {reviewData ? 'Grandmaster Accuracy' : 'Evaluation Position'}
-                </span>
-              </div>
-            </div>
-
-            <div className="text-xs font-mono text-theme-muted bg-theme-sub px-2.5 py-1 rounded-xs border border-theme-border">
-              {currentStep >= 0 ? `Move ${Math.floor(currentStep / 2) + 1}` : 'Start'}
-            </div>
-          </div>
-
-          {/* Board with Eval Bar Row */}
-          <div className="w-full max-w-[680px] flex gap-2 sm:gap-3 items-stretch justify-center">
-            <EvalBar
-              cp={liveEval.cp}
-              mate={liveEval.mate}
-              isFlipped={isFlipped}
-              height={boardHeight}
-            />
-
-            <div className="flex-1 flex justify-center min-w-0">
-              <ChessBoard
-                chess={chess}
-                onMove={handleAnalysisMove}
-                playerColor={null}
-                isFlipped={isFlipped}
-                themeId={boardThemeId}
-                arrow={bestMoveArrow}
-                onBoardWidthChange={setBoardHeight}
-                customBoardWidth={userBoardWidth}
-                annotation={currentAnnotation}
-                lastMove={
-                  currentStep >= 0 && moves[currentStep]
-                    ? { from: moves[currentStep].from, to: moves[currentStep].to }
-                    : null
-                }
-              />
-            </div>
-          </div>
-
-          {/* Bottom Player (White) Card */}
-          <div className="w-full max-w-[680px] mt-2 px-3 py-2 bg-theme-panel rounded-sm border border-theme-border flex items-center justify-between shadow-xs">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-sm bg-[#ffffff] border border-gray-300 flex items-center justify-center font-bold text-xs text-gray-900 shadow-xs">
-                {isFlipped ? 'B' : 'W'}
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-sm text-theme-text">
-                    {isFlipped ? 'Black Player' : 'White Player'}
-                  </span>
-                  {reviewData && (
-                    <span className="text-[11px] font-mono font-bold bg-theme-btn text-theme-accent px-2 py-0.5 rounded-xs border border-theme-border flex items-center gap-1.5">
-                      <span>{isFlipped ? `${reviewData.blackAccuracy}%` : `${reviewData.whiteAccuracy}%`}</span>
-                      {(isFlipped ? reviewData.blackEstimatedElo : reviewData.whiteEstimatedElo) && (
-                        <span className="text-theme-muted font-normal">
-                          · ~{isFlipped ? reviewData.blackEstimatedElo : reviewData.whiteEstimatedElo} Elo
-                        </span>
-                      )}
-                    </span>
-                  )}
-                </div>
-                <span className="text-[11px] text-theme-muted">
-                  {reviewData ? 'Grandmaster Accuracy' : 'Evaluation Position'}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1 bg-theme-sub px-1.5 py-1 rounded-xs border border-theme-border text-xs">
-                <button
-                  onClick={() => handleAdjustBoardWidth(-30)}
-                  title="Decrease board size"
-                  className="p-1 rounded-xs hover:bg-theme-btn text-theme-sec hover:text-white transition-colors"
-                >
-                  <Minus className="w-3 h-3" />
-                </button>
-                <button
-                  onClick={handleResetBoardWidth}
-                  title="Fit to screen (Auto)"
-                  className={`text-[10px] font-mono px-1.5 py-0.5 rounded-xs transition-colors ${
-                    userBoardWidth === null ? 'bg-theme-btn text-theme-accent font-bold' : 'text-theme-muted hover:text-white'
+          {/* Top Player Card */}
+          <div 
+            className="w-full mb-2 px-3.5 py-2 bg-theme-panel rounded-sm border border-theme-border flex items-center justify-between shadow-xs transition-all"
+            style={{ width: '100%', maxWidth: boardHeight ? `${boardHeight + 24}px` : '100%' }}
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              {topPlayer.avatar ? (
+                <img
+                  src={topPlayer.avatar}
+                  alt={topPlayer.name}
+                  className="w-10 h-10 rounded-sm border border-theme-border object-cover shrink-0 shadow-xs"
+                />
+              ) : (
+                <div
+                  className={`w-10 h-10 rounded-sm flex items-center justify-center font-bold text-sm shrink-0 shadow-xs ${
+                    topPlayer.color === 'w'
+                      ? 'bg-white text-gray-900 border border-gray-300'
+                      : 'bg-theme-btn text-white border border-theme-border'
                   }`}
                 >
-                  {userBoardWidth ? `${userBoardWidth}px` : 'Auto'}
-                </button>
-                <button
-                  onClick={() => handleAdjustBoardWidth(30)}
-                  title="Increase board size"
-                  className="p-1 rounded-xs hover:bg-theme-btn text-theme-sec hover:text-white transition-colors"
-                >
-                  <Plus className="w-3 h-3" />
-                </button>
+                  {topPlayer.color === 'w' ? 'W' : 'B'}
+                </div>
+              )}
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-bold text-sm text-theme-text truncate max-w-[150px] sm:max-w-[220px]">
+                    {topPlayer.name}
+                  </span>
+                  {topPlayer.rating && (
+                    <span className="text-xs font-mono font-medium text-theme-muted">
+                      ({topPlayer.rating})
+                    </span>
+                  )}
+                  {topPlayer.accuracy !== undefined && (
+                    <span className="text-[11px] font-mono font-bold bg-theme-btn text-theme-accent px-2 py-0.5 rounded-xs border border-theme-border">
+                      {topPlayer.accuracy}%
+                    </span>
+                  )}
+                </div>
+                <CapturedPieces
+                  captured={topPlayer.captured}
+                  playerColor={topPlayer.color}
+                />
               </div>
+            </div>
+          </div>
 
+          {/* Board with integrated zero-gap Eval Bar */}
+          <div className="w-full flex justify-center">
+            <ChessBoard
+              evalBar={
+                <EvalBar
+                  cp={liveEval.cp}
+                  mate={liveEval.mate}
+                  isFlipped={isFlipped}
+                  height={boardHeight}
+                />
+              }
+              chess={chess}
+              onMove={handleAnalysisMove}
+              playerColor={null}
+              isFlipped={isFlipped}
+              themeId={boardThemeId}
+              arrow={bestMoveArrow}
+              onBoardWidthChange={setBoardHeight}
+              customBoardWidth={userBoardWidth}
+              annotation={currentAnnotation}
+              lastMove={
+                currentStep >= 0 && moves[currentStep]
+                  ? { from: moves[currentStep].from, to: moves[currentStep].to }
+                  : null
+              }
+            />
+          </div>
+
+          {/* Bottom Player Card */}
+          <div 
+            className="w-full mt-2 px-3.5 py-2 bg-theme-panel rounded-sm border border-theme-border flex items-center justify-between shadow-xs transition-all"
+            style={{ width: '100%', maxWidth: boardHeight ? `${boardHeight + 24}px` : '100%' }}
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              {bottomPlayer.avatar ? (
+                <img
+                  src={bottomPlayer.avatar}
+                  alt={bottomPlayer.name}
+                  className="w-10 h-10 rounded-sm border border-theme-border object-cover shrink-0 shadow-xs"
+                />
+              ) : (
+                <div
+                  className={`w-10 h-10 rounded-sm flex items-center justify-center font-bold text-sm shrink-0 shadow-xs ${
+                    bottomPlayer.color === 'w'
+                      ? 'bg-white text-gray-900 border border-gray-300'
+                      : 'bg-theme-btn text-white border border-theme-border'
+                  }`}
+                >
+                  {bottomPlayer.color === 'w' ? 'W' : 'B'}
+                </div>
+              )}
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-bold text-sm text-theme-text truncate max-w-[150px] sm:max-w-[220px]">
+                    {bottomPlayer.name}
+                  </span>
+                  {bottomPlayer.rating && (
+                    <span className="text-xs font-mono font-medium text-theme-muted">
+                      ({bottomPlayer.rating})
+                    </span>
+                  )}
+                  {bottomPlayer.accuracy !== undefined && (
+                    <span className="text-[11px] font-mono font-bold bg-theme-btn text-theme-accent px-2 py-0.5 rounded-xs border border-theme-border">
+                      {bottomPlayer.accuracy}%
+                    </span>
+                  )}
+                </div>
+                <CapturedPieces
+                  captured={bottomPlayer.captured}
+                  playerColor={bottomPlayer.color}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Board Controls Bar: Move indicator, Flip Board, and Board Size Controls */}
+          <div 
+            className="w-full mt-2 px-3 sm:px-4 py-2 bg-theme-panel rounded-sm border border-theme-border flex items-center justify-between text-xs font-mono shadow-xs transition-all"
+            style={{ width: '100%', maxWidth: boardHeight ? `${boardHeight + 24}px` : '100%' }}
+          >
+            {/* Left: Move number & Flip Board button */}
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-1 rounded-xs bg-theme-sub border border-theme-border text-xs font-bold font-mono text-theme-sec">
+                {currentStep >= 0 ? `Move ${Math.floor(currentStep / 2) + 1}` : 'Start Position'}
+              </span>
               <button
                 onClick={() => setIsFlipped(!isFlipped)}
                 title="Flip board view"
-                className="p-1.5 rounded-xs bg-theme-btn hover:bg-theme-btnHover text-theme-sec hover:text-white border border-theme-border transition-colors"
+                className="px-2.5 py-1 rounded-xs bg-theme-sub hover:bg-theme-btn text-theme-sec hover:text-white border border-theme-border hover:border-theme-borderLight transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-sans font-semibold"
               >
-                <RefreshCw className="w-3.5 h-3.5" />
+                <RefreshCw className="w-3.5 h-3.5 text-theme-sec" />
+                <span>Flip</span>
               </button>
             </div>
-          </div>
 
-          {/* Live Engine Info Pill */}
-          <div className="w-full max-w-[680px] mt-2 px-3 py-1.5 bg-theme-panel rounded-sm border border-theme-border flex items-center justify-between text-xs font-mono shadow-xs">
-            <div className="flex items-center gap-2">
-              <span className="text-theme-muted">Eval:</span>
-              <span className="font-bold text-theme-text">
-                {liveEval.mate !== null
-                  ? `M${Math.abs(liveEval.mate)}`
-                  : `${(liveEval.cp / 100).toFixed(2)}`}
-              </span>
-              <span className="text-theme-border">|</span>
-              <span className="text-theme-muted">Depth:</span>
-              <span className="text-theme-sec">{liveEval.depth || 10}</span>
+            {/* Right: Board Size Controls (- Auto / 400px +) */}
+            <div className="flex items-center gap-1 bg-theme-sub px-2 py-0.5 rounded-xs border border-theme-border">
+              <span className="text-[11px] font-sans text-theme-muted font-semibold mr-0.5 hidden sm:inline">Size:</span>
+              <button
+                onClick={() => handleAdjustBoardWidth(-30)}
+                title="Decrease board size"
+                className="p-1 rounded-xs hover:bg-theme-panel text-theme-muted hover:text-white transition-colors cursor-pointer"
+              >
+                <Minus className="w-3 h-3" />
+              </button>
+              <button
+                onClick={handleResetBoardWidth}
+                title="Fit to screen (Auto)"
+                className={`text-[11px] font-mono px-2 py-0.5 rounded-xs transition-colors cursor-pointer ${
+                  userBoardWidth === null ? 'bg-theme-accent text-white font-bold' : 'text-theme-sec hover:text-white'
+                }`}
+              >
+                {userBoardWidth ? `${userBoardWidth}px` : 'Auto'}
+              </button>
+              <button
+                onClick={() => handleAdjustBoardWidth(30)}
+                title="Increase board size"
+                className="p-1 rounded-xs hover:bg-theme-panel text-theme-muted hover:text-white transition-colors cursor-pointer"
+              >
+                <Plus className="w-3 h-3" />
+              </button>
             </div>
-
-            {liveEval.bestMove && (
-              <div className="flex items-center gap-1.5">
-                <span className="text-theme-muted">Engine Best:</span>
-                <span className="font-bold text-theme-accent bg-theme-sub border border-theme-border px-1.5 py-0.5 rounded-xs">
-                  {liveEval.bestMove}
-                </span>
-              </div>
-            )}
           </div>
 
         </div>
 
         {/* Right Column: Review Sidebar */}
-        <div className="lg:col-span-5 xl:col-span-4 flex flex-col gap-3 w-full">
+        <div className="w-full lg:w-[360px] xl:w-[390px] shrink-0 flex flex-col gap-3">
           
           {/* Tabs Navigation (ChessDream style) */}
           <div className="flex bg-theme-panel border border-theme-border rounded-sm p-1 gap-1">
@@ -491,20 +619,20 @@ export default function AnalysisBoard({
             <div className="space-y-3">
               {/* Review Start / Progress Card */}
               {!reviewData && !isAnalyzing && (
-                <div className="p-4 bg-theme-panel rounded-sm border border-theme-border text-center space-y-2.5 shadow-xs">
+                <div className="p-4 bg-theme-panel rounded-sm border border-theme-border text-center space-y-2 shadow-xs">
                   <button
                     onClick={handleStartReview}
                     disabled={moves.length === 0}
                     className="w-full py-3 px-4 rounded-sm font-bold text-sm btn-chess-green flex items-center justify-center gap-2 shadow disabled:opacity-40"
                   >
-                    <Sparkles className="w-4 h-4" />
-                    <span>Run Deep Game Review</span>
+                    <BarChart2 className="w-4 h-4" />
+                    <span>Review Game</span>
                   </button>
-                  <p className="text-[11px] text-theme-muted">
-                    {moves.length > 0
-                      ? `Analyze all ${moves.length} moves at grandmaster Depth 16 with Stockfish 18`
-                      : 'Make moves on the board or import a game to run analysis'}
-                  </p>
+                  {moves.length === 0 && (
+                    <p className="text-[11px] text-theme-muted">
+                      Make moves or import a game to review
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -513,13 +641,13 @@ export default function AnalysisBoard({
                 <div className="p-4 bg-theme-panel rounded-sm border border-theme-border text-center space-y-2.5 shadow-xs">
                   <div className="flex items-center justify-center gap-2 text-sm font-bold text-theme-accent">
                     <Cpu className="w-4 h-4 animate-spin" />
-                    <span>Deep Tactical Game Review in Progress</span>
+                    <span>Analyzing Game...</span>
                   </div>
                   <div className="flex items-center justify-between text-xs px-1 text-theme-muted">
                     <span>
                       {analysisProgress?.san
-                        ? `Evaluating ${analysisProgress.san} (${analysisProgress.current} of ${analysisProgress.total})`
-                        : `Evaluating position ${analysisProgress?.current || 1} of ${analysisProgress?.total || moves.length}`}
+                        ? `${analysisProgress.san} (${analysisProgress.current}/${analysisProgress.total})`
+                        : `${analysisProgress?.current || 0}/${analysisProgress?.total || moves.length}`}
                     </span>
                     <span className="font-mono font-bold text-theme-accent">
                       {analysisProgress?.percent || 0}%
@@ -531,31 +659,25 @@ export default function AnalysisBoard({
                       style={{ width: `${analysisProgress?.percent || 0}%` }}
                     />
                   </div>
-                  <div className="text-[10px] text-theme-muted font-mono">
-                    Stockfish 18 WASM &bull; Multi-PV 3 &bull; Depth 16 &bull; Grandmaster CAPS2
-                  </div>
                 </div>
               )}
 
               {/* Chess.com Style Coach Dialogue Card (Reference Image 2) */}
               {currentClassifiedMove && (
                 <div className="p-3.5 rounded-sm bg-theme-panel border border-theme-border shadow-xs space-y-3">
-                  {/* Header Row: Coach Avatar + Move Badge + Score Pill */}
+                  {/* Header Row: Classification Badge + SAN + Score Pill */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-sm bg-theme-sub border border-theme-border flex items-center justify-center font-bold text-xs text-theme-accent shrink-0">
-                        COACH
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span
-                          className="text-xs px-2 py-0.5 rounded-xs font-black font-mono"
-                          style={{
-                            backgroundColor: currentClassifiedMove.classification.bg,
-                            color: currentClassifiedMove.classification.color,
-                            border: `1px solid ${currentClassifiedMove.classification.color}50`,
-                          }}
-                        >
-                          {currentClassifiedMove.classification.symbol} {currentClassifiedMove.san} is {currentClassifiedMove.classification.label.toLowerCase()}
+                      <ClassificationIcon
+                        classification={currentClassifiedMove.classification}
+                        size={28}
+                      />
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="font-mono font-bold text-base text-white">
+                          {currentClassifiedMove.san}
+                        </span>
+                        <span className="text-xs font-semibold text-theme-sec">
+                          is {currentClassifiedMove.classification.label.toLowerCase()}
                         </span>
                       </div>
                     </div>
@@ -627,7 +749,6 @@ export default function AnalysisBoard({
                       <CheckCircle2 className="w-4 h-4" />
                       <span>Game Review Summary</span>
                     </div>
-                    <span className="text-[10px] font-mono text-theme-muted">Stockfish 18 Multi-PV</span>
                   </div>
 
                   {/* Accuracy & Estimated Performance Elo Cards */}
@@ -668,14 +789,9 @@ export default function AnalysisBoard({
                           key={cat.id}
                           className="flex items-center justify-between p-1.5 rounded-sm bg-theme-sub border border-theme-border"
                         >
-                          <div className="flex items-center gap-2">
-                            <span
-                              className="text-[10px] px-1.5 py-0.2 rounded-xs font-black font-mono"
-                              style={{ backgroundColor: cat.bg, color: cat.color }}
-                            >
-                              {cat.symbol}
-                            </span>
-                            <span className="text-[11px] text-theme-sec">{cat.label}</span>
+                          <div className="flex items-center gap-2.5">
+                            <ClassificationIcon classification={cat} size={18} />
+                            <span className="text-xs font-medium text-theme-sec">{cat.label}</span>
                           </div>
                           <div className="flex items-center gap-2 font-mono text-[11px]">
                             <span className="text-white font-bold">{whiteCount}</span>
@@ -710,7 +826,7 @@ export default function AnalysisBoard({
           {activeTab === 'graph' && (
             <div className="p-3 bg-theme-panel rounded-sm border border-theme-border space-y-3">
               <span className="text-xs font-bold text-theme-muted uppercase tracking-wider block">
-                Advantage Waveform
+                Advantage Graph
               </span>
               {reviewData ? (
                 <AdvantageGraph
@@ -720,8 +836,8 @@ export default function AnalysisBoard({
                   onSelectStep={goToStep}
                 />
               ) : (
-                <div className="h-24 flex items-center justify-center text-xs text-theme-muted italic">
-                  Run Game Review to generate full advantage curve.
+                <div className="h-24 flex items-center justify-center text-xs text-theme-muted">
+                  No review data yet.
                 </div>
               )}
             </div>
@@ -758,7 +874,7 @@ export default function AnalysisBoard({
           <div className="grid grid-cols-2 gap-2 pt-1">
             <button
               onClick={handleCopyFen}
-              className="py-2.5 px-3 rounded-sm text-xs font-semibold btn-chess-secondary flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              className="py-2 px-3 rounded-sm text-xs font-semibold btn-chess-utility flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
               title="Copy current position FEN"
             >
               {copiedFen ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-theme-muted" />}
@@ -766,7 +882,7 @@ export default function AnalysisBoard({
             </button>
             <button
               onClick={handleCopyPgn}
-              className="py-2.5 px-3 rounded-sm text-xs font-semibold btn-chess-secondary flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              className="py-2 px-3 rounded-sm text-xs font-semibold btn-chess-utility flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
               title="Copy game PGN"
             >
               {copiedPgn ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-theme-muted" />}
