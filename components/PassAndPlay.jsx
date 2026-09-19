@@ -32,30 +32,37 @@ export default function PassAndPlay({
   const [capturedWhite, setCapturedWhite] = useState([]);
   const [capturedBlack, setCapturedBlack] = useState([]);
   const [boardHeight, setBoardHeight] = useState(560);
-  const [userBoardWidth, setUserBoardWidth] = useState(() => {
-    if (typeof window !== 'undefined') {
+  const [userBoardWidth, setUserBoardWidth] = useState(null);
+
+  useEffect(() => {
+    try {
       const saved = localStorage.getItem('mutantchess_board_width');
       if (saved) {
         const parsed = parseInt(saved, 10);
-        if (!isNaN(parsed) && parsed >= 320 && parsed <= 1000) return parsed;
+        if (!isNaN(parsed) && parsed >= 320 && parsed <= 1000) {
+          setUserBoardWidth(parsed);
+        }
       }
-    }
-    return null;
-  });
+    } catch (e) {}
+  }, []);
 
   const handleAdjustBoardWidth = (delta) => {
     const current = userBoardWidth || boardHeight || 560;
     const next = Math.max(340, Math.min(840, current + delta));
     setUserBoardWidth(next);
     if (typeof window !== 'undefined') {
-      localStorage.setItem('mutantchess_board_width', next.toString());
+      try {
+        localStorage.setItem('mutantchess_board_width', next.toString());
+      } catch (e) {}
     }
   };
 
   const handleResetBoardWidth = () => {
     setUserBoardWidth(null);
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('mutantchess_board_width');
+      try {
+        localStorage.removeItem('mutantchess_board_width');
+      } catch (e) {}
     }
   };
 
@@ -290,7 +297,8 @@ export default function PassAndPlay({
                   {isFlipped ? 'Player 1 (White)' : 'Player 2 (Black)'}
                 </span>
                 <CapturedPieces
-                  captured={isFlipped ? capturedWhite : capturedBlack}
+                  whiteCaptured={capturedWhite}
+                  blackCaptured={capturedBlack}
                   playerColor={isFlipped ? 'w' : 'b'}
                 />
               </div>
@@ -336,7 +344,8 @@ export default function PassAndPlay({
                   {isFlipped ? 'Player 2 (Black)' : 'Player 1 (White)'}
                 </span>
                 <CapturedPieces
-                  captured={isFlipped ? capturedBlack : capturedWhite}
+                  whiteCaptured={capturedWhite}
+                  blackCaptured={capturedBlack}
                   playerColor={isFlipped ? 'b' : 'w'}
                 />
               </div>
@@ -358,11 +367,8 @@ export default function PassAndPlay({
             className="w-full mt-2 px-3 sm:px-4 py-2 bg-theme-panel rounded-sm border border-theme-border flex items-center justify-between text-xs font-mono shadow-xs transition-all"
             style={{ width: '100%', maxWidth: boardHeight ? `${boardHeight}px` : '100%' }}
           >
-            {/* Left: Move number & Flip Board button */}
+            {/* Left: Flip Board & Copy Tools */}
             <div className="flex items-center gap-2">
-              <span className="px-2.5 py-1 rounded-xs bg-theme-sub border border-theme-border text-xs font-bold font-mono text-theme-sec">
-                {historyMoves.length > 0 ? `Move ${Math.ceil(historyMoves.length / 2)}` : 'Start Position'}
-              </span>
               <button
                 onClick={() => setIsFlipped(!isFlipped)}
                 title="Flip board view"
@@ -371,6 +377,25 @@ export default function PassAndPlay({
                 <RefreshCw className="w-3.5 h-3.5 text-theme-sec" />
                 <span>Flip</span>
               </button>
+
+              <div className="flex items-center gap-1 border-l border-theme-border pl-2">
+                <button
+                  onClick={handleCopyFen}
+                  title="Copy current position FEN"
+                  className="px-2 py-1 rounded-xs bg-theme-sub hover:bg-theme-btn text-theme-muted hover:text-white border border-theme-border transition-colors cursor-pointer flex items-center gap-1 text-[11px] font-sans"
+                >
+                  {copiedFen ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                  <span>{copiedFen ? 'Copied' : 'FEN'}</span>
+                </button>
+                <button
+                  onClick={handleCopyPgn}
+                  title="Copy game PGN"
+                  className="px-2 py-1 rounded-xs bg-theme-sub hover:bg-theme-btn text-theme-muted hover:text-white border border-theme-border transition-colors cursor-pointer flex items-center gap-1 text-[11px] font-sans"
+                >
+                  {copiedPgn ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                  <span>{copiedPgn ? 'Copied' : 'PGN'}</span>
+                </button>
+              </div>
             </div>
 
             {/* Right: Board Size Controls (- Auto / 400px +) */}
@@ -386,6 +411,7 @@ export default function PassAndPlay({
               <button
                 onClick={handleResetBoardWidth}
                 title="Fit to screen (Auto)"
+                suppressHydrationWarning
                 className={`text-[11px] font-mono px-2 py-0.5 rounded-xs transition-colors cursor-pointer ${
                   userBoardWidth === null ? 'bg-theme-accent text-white font-bold' : 'text-theme-sec hover:text-white'
                 }`}
@@ -468,7 +494,7 @@ export default function PassAndPlay({
           <div className="space-y-2">
             <button
               onClick={startNewGame}
-              className="w-full py-2.5 px-4 rounded-sm font-bold text-sm btn-chess-green flex items-center justify-center gap-2 shadow"
+              className="w-full py-2.5 px-4 rounded-sm font-bold text-sm btn-chess-green flex items-center justify-center gap-2"
             >
               <RotateCcw className="w-4 h-4" />
               <span>New Game</span>
@@ -482,7 +508,7 @@ export default function PassAndPlay({
                   handleGameOver(`${winningPlayer} Wins!`, `${resigningPlayer} resigned.`);
                 }}
                 disabled={gameResult !== null}
-                className="py-1.5 px-2 sm:px-2.5 rounded-sm text-xs font-bold btn-chess-danger disabled:opacity-40 flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                className="py-1.5 px-2 sm:px-2.5 rounded-sm text-xs font-bold btn-chess-danger disabled:opacity-40 flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Flag className="w-3.5 h-3.5 shrink-0" />
                 <span className="truncate">Resign</span>
@@ -490,37 +516,17 @@ export default function PassAndPlay({
               <button
                 onClick={() => handleGameOver('Draw Agreed', 'Mutual draw agreement.')}
                 disabled={gameResult !== null}
-                className="py-1.5 px-2 sm:px-2.5 rounded-sm text-xs font-bold btn-chess-draw disabled:opacity-40 flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                className="py-1.5 px-2 sm:px-2.5 rounded-sm text-xs font-bold btn-chess-draw disabled:opacity-40 flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Handshake className="w-3.5 h-3.5 shrink-0" />
                 <span className="truncate">Draw</span>
               </button>
               <button
                 onClick={() => setIsFlipped(!isFlipped)}
-                className="py-1.5 px-2 sm:px-2.5 rounded-sm text-xs font-bold btn-chess-flip flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                className="py-1.5 px-2 sm:px-2.5 rounded-sm text-xs font-bold btn-chess-flip flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <RefreshCw className="w-3.5 h-3.5 shrink-0" />
                 <span className="truncate">Flip</span>
-              </button>
-            </div>
-
-            {/* Copy FEN / PGN Buttons */}
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={handleCopyFen}
-                className="py-2 px-3 rounded-sm btn-chess-utility flex items-center justify-center gap-1.5 text-xs font-semibold cursor-pointer"
-                title="Copy current position FEN"
-              >
-                {copiedFen ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-theme-muted" />}
-                <span>{copiedFen ? 'FEN Copied!' : 'Copy FEN'}</span>
-              </button>
-              <button
-                onClick={handleCopyPgn}
-                className="py-2 px-3 rounded-sm btn-chess-utility flex items-center justify-center gap-1.5 text-xs font-semibold cursor-pointer"
-                title="Copy game PGN"
-              >
-                {copiedPgn ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-theme-muted" />}
-                <span>{copiedPgn ? 'PGN Copied!' : 'Copy PGN'}</span>
               </button>
             </div>
 

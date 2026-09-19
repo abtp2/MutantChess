@@ -26,7 +26,17 @@ import {
   X,
   Play,
   RotateCcw,
+  ChevronRight,
+  ChevronDown,
 } from 'lucide-react';
+
+function getTimeIcon(timeClass) {
+  const cls = (timeClass || '').toLowerCase();
+  if (cls.includes('bullet')) return <Zap className="w-3.5 h-3.5 text-amber-400 shrink-0" />;
+  if (cls.includes('blitz')) return <Flame className="w-3.5 h-3.5 text-orange-400 shrink-0" />;
+  if (cls.includes('rapid')) return <Clock className="w-3.5 h-3.5 text-emerald-400 shrink-0" />;
+  return <Clock className="w-3.5 h-3.5 text-theme-muted shrink-0" />;
+}
 
 export default function GameImporter({ onSelectGameForAnalysis }) {
   const [activeTab, setActiveTab] = useState('chesscom');
@@ -307,48 +317,55 @@ export default function GameImporter({ onSelectGameForAnalysis }) {
 
   return (
     <div className="w-full max-w-4xl mx-auto px-2 sm:px-4 py-4 select-none animate-fadeIn">
-      {/* Header Card */}
-      <div className="bg-theme-panel border border-theme-border rounded-sm p-4 sm:p-5 shadow-xs mb-4">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-9 h-9 rounded-sm bg-theme-accent flex items-center justify-center text-white shadow-xs shrink-0">
-            <DownloadCloud className="w-5 h-5" />
-          </div>
-          <div>
-            <h2 className="text-base sm:text-lg font-bold text-white">Import Games</h2>
+      {/* Unified Card Container */}
+      <div className="bg-theme-panel border border-theme-border rounded-sm shadow-xs overflow-hidden">
+        {/* Header & Tab Switcher Bar */}
+        <div className="p-4 sm:p-5 border-b border-theme-border bg-theme-panel">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-sm bg-theme-accent flex items-center justify-center text-white shadow-xs shrink-0">
+                <DownloadCloud className="w-4 h-4" />
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-white leading-tight">Import Games</h2>
+                <p className="text-[11px] text-theme-muted mt-0.5">
+                  Fetch match history or import custom chess positions
+                </p>
+              </div>
+            </div>
+
+            {/* Tab Switcher */}
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { id: 'chesscom', label: 'Chess.com' },
+                { id: 'lichess', label: 'Lichess.org' },
+                { id: 'pgn', label: 'Paste PGN' },
+                { id: 'fen', label: 'Custom FEN' },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    setGames([]);
+                    setUserProfile(null);
+                    setError('');
+                    handleResetFilters();
+                  }}
+                  className={`px-3 py-1.5 rounded-xs text-xs font-bold transition-colors cursor-pointer ${
+                    activeTab === tab.id
+                      ? 'bg-theme-accent text-white shadow-xs'
+                      : 'bg-theme-sub text-theme-sec hover:bg-theme-btn hover:text-white border border-theme-border'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Tab Switcher */}
-        <div className="flex flex-wrap gap-2 pt-3 border-t border-theme-border">
-          {[
-            { id: 'chesscom', label: 'Chess.com' },
-            { id: 'lichess', label: 'Lichess.org' },
-            { id: 'pgn', label: 'Paste PGN' },
-            { id: 'fen', label: 'Custom FEN' },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => {
-                setActiveTab(tab.id);
-                setGames([]);
-                setUserProfile(null);
-                setError('');
-                handleResetFilters();
-              }}
-              className={`px-3.5 py-1.5 rounded-sm text-xs font-bold transition-colors cursor-pointer ${
-                activeTab === tab.id
-                  ? 'bg-theme-accent text-white shadow-xs'
-                  : 'bg-theme-btn text-theme-sec hover:bg-theme-btnHover hover:text-white'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Main Content Area */}
-      <div className="bg-theme-panel border border-theme-border rounded-sm p-4 sm:p-5 shadow-xs space-y-4">
+        {/* Main Content Body */}
+        <div className="p-4 sm:p-5 space-y-4">
         {error && (
           <div className="p-3 rounded-sm bg-red-950/60 border border-red-800 text-red-300 text-xs flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
@@ -359,7 +376,11 @@ export default function GameImporter({ onSelectGameForAnalysis }) {
         {/* Chess.com / Lichess Search */}
         {(activeTab === 'chesscom' || activeTab === 'lichess') && (
           <div className="space-y-4">
-            <div className="flex gap-2">
+            {/* Modern Search Bar */}
+            <div className="relative flex items-center bg-theme-sub border border-theme-border rounded-sm p-1.5 transition-all focus-within:border-theme-accent focus-within:ring-1 focus-within:ring-theme-accent/30 shadow-xs">
+              <div className="pl-3.5 pr-2.5 flex items-center text-theme-muted shrink-0">
+                <Search className="w-4 h-4 text-theme-accent" />
+              </div>
               <input
                 type="text"
                 value={username}
@@ -370,15 +391,24 @@ export default function GameImporter({ onSelectGameForAnalysis }) {
                     ? 'Enter Chess.com username (e.g. hikaru, magnuscarlsen)...'
                     : 'Enter Lichess username (e.g. DrNykterstein, penguingm1)...'
                 }
-                className="flex-1 bg-theme-sub border border-theme-border rounded-sm px-3.5 py-2.5 text-xs sm:text-sm text-white placeholder-theme-muted focus:outline-none focus:border-theme-accent"
+                className="flex-1 bg-transparent border-none px-2 py-3 text-xs sm:text-sm text-white placeholder-theme-muted focus:outline-none"
               />
+              {username && (
+                <button
+                  onClick={() => setUsername('')}
+                  className="p-1.5 text-theme-muted hover:text-white transition-colors cursor-pointer mr-1"
+                  title="Clear"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
               <button
                 onClick={() => handleSearch()}
                 disabled={loading || !username.trim()}
-                className="px-5 py-2.5 rounded-sm font-bold text-xs sm:text-sm btn-chess-green flex items-center gap-2 disabled:opacity-40 cursor-pointer"
+                className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-xs font-bold text-xs sm:text-sm btn-chess-green flex items-center gap-2 disabled:opacity-40 cursor-pointer shrink-0 transition-all"
               >
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-                <span>Fetch</span>
+                <span>Fetch Games</span>
               </button>
             </div>
 
@@ -479,22 +509,23 @@ export default function GameImporter({ onSelectGameForAnalysis }) {
             {games.length > 0 && (
               <div className="mt-4 space-y-3">
                 {/* Filter Toolbar */}
-                <div className="p-3 rounded-sm bg-theme-sub border border-theme-border space-y-2.5">
-                  <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center justify-between">
+                <div className="p-3.5 sm:p-4 rounded-sm bg-theme-sub border border-theme-border space-y-3">
+                  <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center justify-between">
                     {/* Opponent Search Input */}
-                    <div className="relative flex-1">
-                      <Search className="w-3.5 h-3.5 text-theme-muted absolute left-3 top-1/2 -translate-y-1/2" />
+                    <div className="flex-1 flex items-center bg-theme-panel border border-theme-border rounded-xs px-3 py-2 sm:py-2.5 focus-within:border-theme-accent focus-within:ring-1 focus-within:ring-theme-accent/30 transition-all">
+                      <Search className="w-4 h-4 text-theme-muted shrink-0 mr-2.5 pointer-events-none" />
                       <input
                         type="text"
                         value={searchOpponent}
                         onChange={(e) => setSearchOpponent(e.target.value)}
                         placeholder="Filter by opponent username..."
-                        className="w-full pl-8.5 pr-8 py-1.5 bg-theme-panel border border-theme-border rounded-xs text-xs text-white placeholder-theme-muted focus:outline-none focus:border-theme-accent"
+                        className="flex-1 bg-transparent border-0 p-0 text-xs sm:text-sm text-white placeholder-theme-muted focus:outline-none min-w-0"
                       />
                       {searchOpponent && (
                         <button
                           onClick={() => setSearchOpponent('')}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 text-theme-muted hover:text-white p-0.5 cursor-pointer"
+                          className="text-theme-muted hover:text-white p-0.5 ml-1 shrink-0 cursor-pointer"
+                          title="Clear opponent filter"
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
@@ -505,167 +536,155 @@ export default function GameImporter({ onSelectGameForAnalysis }) {
                     {isAnyFilterActive && (
                       <button
                         onClick={handleResetFilters}
-                        className="px-2.5 py-1.5 rounded-xs bg-theme-panel hover:bg-theme-btn border border-theme-border text-xs text-theme-sec hover:text-white flex items-center justify-center gap-1 cursor-pointer transition-colors shrink-0"
+                        className="px-3 py-2 sm:py-2.5 rounded-xs bg-theme-panel hover:bg-theme-btn border border-theme-border text-xs text-theme-sec hover:text-white flex items-center justify-center gap-1.5 cursor-pointer transition-colors shrink-0 font-medium"
                       >
-                        <RotateCcw className="w-3 h-3" />
+                        <RotateCcw className="w-3.5 h-3.5" />
                         <span>Reset Filters</span>
                       </button>
                     )}
                   </div>
 
-                  {/* Filter Chips */}
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
-                    {/* Result Filter */}
-                    <div className="flex items-center gap-1">
-                      <span className="text-theme-muted text-[11px] font-semibold mr-1">Result:</span>
-                      {[
-                        { id: 'all', label: 'All' },
-                        { id: 'win', label: 'Wins' },
-                        { id: 'loss', label: 'Losses' },
-                        { id: 'draw', label: 'Draws' },
-                      ].map((opt) => {
-                        const isActive = filterResult === opt.id;
-                        let chipStyle = 'bg-theme-panel hover:bg-theme-btn text-theme-sec hover:text-white border border-theme-border';
-                        if (isActive) {
-                          if (opt.id === 'win') chipStyle = 'bg-emerald-600 text-white font-bold border border-emerald-500 shadow-xs';
-                          else if (opt.id === 'loss') chipStyle = 'bg-rose-600 text-white font-bold border border-rose-500 shadow-xs';
-                          else if (opt.id === 'draw') chipStyle = 'bg-sky-600 text-white font-bold border border-sky-500 shadow-xs';
-                          else chipStyle = 'bg-theme-accent text-white font-bold border border-theme-accent shadow-xs';
-                        } else {
-                          if (opt.id === 'win') chipStyle = 'bg-emerald-950/30 hover:bg-emerald-950/60 text-emerald-400 border border-emerald-800/40';
-                          else if (opt.id === 'loss') chipStyle = 'bg-rose-950/30 hover:bg-rose-950/60 text-rose-400 border border-rose-800/40';
-                          else if (opt.id === 'draw') chipStyle = 'bg-sky-950/30 hover:bg-sky-950/60 text-sky-400 border border-sky-800/40';
-                        }
-                        return (
-                          <button
-                            key={opt.id}
-                            onClick={() => setFilterResult(opt.id)}
-                            className={`px-2.5 py-1 rounded-xs text-[11px] font-semibold transition-colors cursor-pointer ${chipStyle}`}
-                          >
-                            {opt.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {/* Time Control Filter */}
-                    <div className="flex items-center gap-1">
-                      <span className="text-theme-muted text-[11px] font-semibold mr-1">Speed:</span>
-                      {[
-                        { id: 'all', label: 'All' },
-                        { id: 'bullet', label: 'Bullet' },
-                        { id: 'blitz', label: 'Blitz' },
-                        { id: 'rapid', label: 'Rapid' },
-                        { id: 'daily', label: 'Daily' },
-                      ].map((opt) => (
-                        <button
-                          key={opt.id}
-                          onClick={() => setFilterTime(opt.id)}
-                          className={`px-2.5 py-1 rounded-xs text-[11px] font-semibold transition-colors cursor-pointer ${
-                            filterTime === opt.id
-                              ? 'bg-theme-accent text-white font-bold border border-theme-accent shadow-xs'
-                              : 'bg-theme-panel hover:bg-theme-btn text-theme-sec hover:text-white border border-theme-border'
-                          }`}
+                  {/* Select Option Dropdown Filters with comfortable padding-y */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-0.5">
+                    {/* Result Select */}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-semibold text-theme-sec">Result</label>
+                      <div className="relative">
+                        <select
+                          value={filterResult}
+                          onChange={(e) => setFilterResult(e.target.value)}
+                          className="w-full bg-theme-panel text-white border border-theme-border rounded-xs px-3 py-2.5 text-xs sm:text-sm font-medium focus:outline-none focus:border-theme-accent cursor-pointer transition-colors appearance-none pr-8"
                         >
-                          {opt.label}
-                        </button>
-                      ))}
+                          <option value="all">All Results</option>
+                          <option value="win">Wins Only</option>
+                          <option value="loss">Losses Only</option>
+                          <option value="draw">Draws Only</option>
+                        </select>
+                        <ChevronDown className="w-4 h-4 text-theme-muted absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      </div>
                     </div>
 
-                    {/* Color Filter */}
-                    <div className="flex items-center gap-1">
-                      <span className="text-theme-muted text-[11px] font-semibold mr-1">Color:</span>
-                      {[
-                        { id: 'all', label: 'All' },
-                        { id: 'white', label: 'White' },
-                        { id: 'black', label: 'Black' },
-                      ].map((opt) => {
-                        const isActive = filterColor === opt.id;
-                        let chipStyle = 'bg-theme-panel hover:bg-theme-btn text-theme-sec hover:text-white border border-theme-border';
-                        if (isActive) {
-                          if (opt.id === 'white') chipStyle = 'bg-white text-gray-950 font-bold border border-white shadow-xs';
-                          else if (opt.id === 'black') chipStyle = 'bg-[#181614] text-white font-bold border border-[#4a4742] shadow-xs';
-                          else chipStyle = 'bg-theme-accent text-white font-bold border border-theme-accent shadow-xs';
-                        }
-                        return (
-                          <button
-                            key={opt.id}
-                            onClick={() => setFilterColor(opt.id)}
-                            className={`px-2.5 py-1 rounded-xs text-[11px] font-semibold transition-colors cursor-pointer ${chipStyle}`}
-                          >
-                            {opt.label}
-                          </button>
-                        );
-                      })}
+                    {/* Time Control / Speed Select */}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-semibold text-theme-sec">Speed</label>
+                      <div className="relative">
+                        <select
+                          value={filterTime}
+                          onChange={(e) => setFilterTime(e.target.value)}
+                          className="w-full bg-theme-panel text-white border border-theme-border rounded-xs px-3 py-2.5 text-xs sm:text-sm font-medium focus:outline-none focus:border-theme-accent cursor-pointer transition-colors appearance-none pr-8"
+                        >
+                          <option value="all">All Speeds</option>
+                          <option value="bullet">Bullet</option>
+                          <option value="blitz">Blitz</option>
+                          <option value="rapid">Rapid</option>
+                          <option value="daily">Daily</option>
+                        </select>
+                        <ChevronDown className="w-4 h-4 text-theme-muted absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      </div>
+                    </div>
+
+                    {/* Color Select */}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-semibold text-theme-sec">Piece Color</label>
+                      <div className="relative">
+                        <select
+                          value={filterColor}
+                          onChange={(e) => setFilterColor(e.target.value)}
+                          className="w-full bg-theme-panel text-white border border-theme-border rounded-xs px-3 py-2.5 text-xs sm:text-sm font-medium focus:outline-none focus:border-theme-accent cursor-pointer transition-colors appearance-none pr-8"
+                        >
+                          <option value="all">All Colors</option>
+                          <option value="white">White Pieces</option>
+                          <option value="black">Black Pieces</option>
+                        </select>
+                        <ChevronDown className="w-4 h-4 text-theme-muted absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      </div>
                     </div>
                   </div>
 
                   {/* Showing Count & Stats Bar */}
-                  <div className="flex items-center justify-between pt-1 border-t border-theme-border/60 text-[11px] text-theme-muted">
+                  <div className="flex items-center justify-between pt-2.5 border-t border-white/[0.07] text-xs text-theme-muted">
                     <span>
-                      Showing <strong className="text-white">{filteredGames.length}</strong> of{' '}
-                      <strong className="text-white">{games.length}</strong> games
+                      Showing <strong className="text-white font-bold">{filteredGames.length}</strong> of{' '}
+                      <strong className="text-white font-bold">{games.length}</strong> games
                     </span>
-                    <div className="flex items-center gap-2 font-mono text-[11px]">
-                      <span className="text-emerald-400 font-semibold">{totalWins}W</span>
-                      <span className="text-red-400 font-semibold">{totalLosses}L</span>
-                      <span className="text-blue-400 font-semibold">{totalDraws}D</span>
+                    <div className="flex items-center gap-2.5 font-mono text-xs">
+                      <span className="text-emerald-400 font-bold">{totalWins}W</span>
+                      <span className="text-rose-400 font-bold">{totalLosses}L</span>
+                      <span className="text-blue-400 font-bold">{totalDraws}D</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Games Grid or Empty message */}
+                {/* Simple & Elegant Games List */}
                 {filteredGames.length === 0 ? (
-                  <div className="p-8 text-center bg-theme-sub rounded-sm border border-theme-border text-theme-muted text-xs">
+                  <div className="p-8 text-center bg-theme-sub rounded-sm border border-theme-border text-theme-muted text-xs sm:text-sm">
                     No games match your selected filters.
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[440px] overflow-y-auto custom-scrollbar pr-1">
+                  <div className="space-y-2 max-h-[500px] overflow-y-auto custom-scrollbar pr-1">
                     {filteredGames.map((g) => (
                       <div
                         key={g.id}
                         onClick={() => handleSelectGame(g)}
-                        className="p-3 rounded-sm bg-theme-sub hover:bg-theme-btn border border-theme-border hover:border-theme-accent cursor-pointer transition-all shadow-xs group"
+                        className="px-3.5 sm:px-4 py-3 rounded-sm bg-theme-sub hover:bg-theme-panel border border-theme-border hover:border-theme-borderLight cursor-pointer transition-all flex items-center justify-between gap-3 sm:gap-4 group"
                       >
-                        <div className="flex items-center justify-between text-[11px] text-theme-muted mb-1.5">
-                          <span>{g.date}</span>
-                          <span className="font-semibold text-theme-sec">{g.timeControl}</span>
-                        </div>
-
-                        <div className="space-y-1 text-xs">
-                          <div className="text-white truncate flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-full bg-white shadow-xs" />
-                            <span className="font-bold">{g.white.username}</span>
+                        {/* Left: Players & Ratings */}
+                        <div className="min-w-0 flex-1 space-y-1">
+                          <div className="flex items-center gap-2 text-xs sm:text-sm truncate">
+                            <span className="w-2.5 h-2.5 rounded-full bg-white shrink-0 border border-gray-300 shadow-xs" />
+                            <span className="font-semibold text-white truncate max-w-[140px] sm:max-w-[260px]">
+                              {g.white.username}
+                            </span>
                             {g.white.rating && (
-                              <span className="text-theme-muted font-mono">({g.white.rating})</span>
+                              <span className="text-xs font-mono text-theme-muted shrink-0">
+                                ({g.white.rating})
+                              </span>
                             )}
                           </div>
-                          <div className="text-white truncate flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-full bg-gray-900 border border-gray-600 shadow-xs" />
-                            <span className="font-bold">{g.black.username}</span>
+                          <div className="flex items-center gap-2 text-xs sm:text-sm truncate">
+                            <span className="w-2.5 h-2.5 rounded-full bg-neutral-900 shrink-0 border border-neutral-600 shadow-xs" />
+                            <span className="font-semibold text-white truncate max-w-[140px] sm:max-w-[260px]">
+                              {g.black.username}
+                            </span>
                             {g.black.rating && (
-                              <span className="text-theme-muted font-mono">({g.black.rating})</span>
+                              <span className="text-xs font-mono text-theme-muted shrink-0">
+                                ({g.black.rating})
+                              </span>
                             )}
                           </div>
                         </div>
 
-                        <div className="mt-2.5 pt-2 border-t border-theme-border flex items-center justify-between">
-                          <span
-                            className={`text-[11px] font-bold px-2 py-0.5 rounded-xs ${
-                              g.result === 'Win'
-                                ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                                : g.result === 'Loss'
-                                ? 'bg-red-950 text-red-400 border border-red-800'
-                                : 'bg-theme-panel text-theme-sec'
-                            }`}
-                          >
-                            {g.result} ({g.score || '*'})
-                          </span>
-
-                          <div className="flex items-center gap-1.5 text-xs font-bold bg-theme-accent hover:bg-theme-accentHover text-white px-2.5 py-1 rounded-xs transition-colors shadow-xs">
-                            <BarChart2 className="w-3.5 h-3.5" />
-                            <span>Analyze</span>
+                        {/* Middle: Speed / Time Control & Date */}
+                        <div className="hidden sm:flex flex-col items-center justify-center text-center shrink-0 min-w-[120px]">
+                          <div className="text-xs font-medium text-theme-sec flex items-center gap-1.5">
+                            {getTimeIcon(g.timeClass || g.timeControl)}
+                            <span>{g.timeControl || 'Standard'}</span>
                           </div>
+                          <div className="text-[11px] text-theme-muted font-sans mt-0.5">{g.date}</div>
+                        </div>
+
+                        {/* Right: Outcome badge, score, and Review action */}
+                        <div className="flex items-center gap-3 shrink-0">
+                          <div className="text-right">
+                            <span
+                              className={`inline-block text-xs font-bold px-2.5 py-1 rounded-xs ${
+                                g.result === 'Win'
+                                  ? 'bg-emerald-500/15 text-emerald-400'
+                                  : g.result === 'Loss'
+                                  ? 'bg-rose-500/15 text-rose-400'
+                                  : 'bg-theme-panel text-theme-sec'
+                              }`}
+                            >
+                              {g.result}
+                            </span>
+                            <div className="text-[11px] font-mono text-theme-muted mt-0.5">
+                              {g.score || '*'}
+                              <span className="sm:hidden text-[10px] ml-1.5 text-theme-muted">
+                                • {g.timeControl || 'Game'}
+                              </span>
+                            </div>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-theme-muted group-hover:text-theme-accent group-hover:translate-x-0.5 transition-all" />
                         </div>
                       </div>
                     ))}
@@ -755,7 +774,7 @@ export default function GameImporter({ onSelectGameForAnalysis }) {
                 value={fenInput}
                 onChange={(e) => setFenInput(e.target.value)}
                 placeholder="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-                className="w-full bg-theme-sub border border-theme-border rounded-sm p-3 text-xs font-mono text-white placeholder-theme-muted focus:outline-none focus:border-theme-accent"
+                className="w-full bg-theme-sub border border-theme-border rounded-sm px-3.5 py-3 sm:py-3.5 text-xs sm:text-sm font-mono text-white placeholder-theme-muted focus:outline-none focus:border-theme-accent"
               />
             </div>
 
@@ -773,5 +792,6 @@ export default function GameImporter({ onSelectGameForAnalysis }) {
         )}
       </div>
     </div>
-  );
+  </div>
+);
 }

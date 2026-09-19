@@ -145,7 +145,7 @@ export default function ThemeSelector({
               <p className="text-[11px] text-theme-muted mb-3">
                 Choose a board style independently without affecting your current app interface theme.
               </p>
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 {BOARD_THEMES.map((theme) => {
                   const isSelected = currentBoardTheme === theme.id;
                   return (

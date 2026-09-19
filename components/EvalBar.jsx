@@ -3,7 +3,7 @@
 
 import React from 'react';
 
-export default function EvalBar({
+function EvalBarComponent({
   cp = 0,
   mate = null,
   isFlipped = false,
@@ -84,4 +84,7 @@ export default function EvalBar({
     </div>
   );
 }
+
+const EvalBar = React.memo(EvalBarComponent);
+export default EvalBar;
 

@@ -4,22 +4,22 @@
 
 :root {
   color-scheme: dark;
-  --theme-bg: #302e2b;
+  --theme-bg: #1e1d1a;
   --theme-panel: #262421;
-  --theme-panel-sub: #21201d;
-  --theme-sidebar: #1e1c19;
-  --theme-border: #3d3a36;
-  --theme-border-light: #4a4742;
+  --theme-panel-sub: #312e2b;
+  --theme-sidebar: #181715;
+  --theme-border: #36332e;
+  --theme-border-light: #423e38;
   --theme-accent: #81b64c;
-  --theme-accent-hover: #95bb58;
-  --theme-accent-shadow: #5d8537;
+  --theme-accent-hover: #95c65a;
+  --theme-accent-shadow: transparent;
   --theme-accent-text: #ffffff;
-  --theme-btn-bg: #3d3b37;
-  --theme-btn-hover: #4a4742;
-  --theme-btn-active: #2e2c29;
+  --theme-btn-bg: #383530;
+  --theme-btn-hover: #45413b;
+  --theme-btn-active: #2a2723;
   --theme-text: #ffffff;
-  --theme-text-sec: #c3c2c1;
-  --theme-text-muted: #8b8987;
+  --theme-text-sec: #dedcd9;
+  --theme-text-muted: #9c9892;
 }
 
 body {
@@ -51,6 +51,15 @@ body {
   background: var(--theme-btn-hover);
 }
 
+/* Hide scrollbar for clean horizontal strips */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Global flat style: completely remove all box-shadows everywhere */
 *,
 *::before,
@@ -61,16 +70,17 @@ body {
 /* Primary Action Button (CTA) - High-intent actions: Play, Analyze, Review, New Game */
 .btn-chess-green {
   background-color: var(--theme-accent, #81b64c);
-  color: #ffffff;
+  color: var(--theme-accent-text, #ffffff);
   font-weight: 700;
-  border: 1px solid #6c9e3b;
+  border: 1px solid var(--theme-accent-hover, var(--theme-accent, #81b64c));
   border-radius: 3px;
+  box-shadow: none !important;
   transition: all 0.15s ease-in-out;
 }
 
 .btn-chess-green:hover:not(:disabled) {
   background-color: var(--theme-accent-hover, #95bb58);
-  border-color: #7bb446;
+  border-color: var(--theme-accent-hover, #95bb58);
 }
 
 .btn-chess-green:active:not(:disabled) {
@@ -84,6 +94,7 @@ body {
   font-weight: 600;
   border: 1px solid var(--theme-border, #3d3a36);
   border-radius: 3px;
+  box-shadow: none !important;
   transition: all 0.15s ease-in-out;
 }
 
@@ -97,24 +108,30 @@ body {
   transform: translateY(1px);
 }
 
-/* Resign, Draw, Flip Buttons - Solid, matching the current UI theme color */
+/* Resign, Draw, Flip Buttons - Aligned with the current UI theme */
 .btn-chess-danger,
 .btn-chess-draw,
 .btn-chess-flip {
-  background-color: var(--theme-accent, #81b64c);
-  color: var(--theme-accent-text, #ffffff);
-  font-weight: 700;
-  border: 1px solid var(--theme-accent-shadow, #6c9e3b);
+  background-color: var(--theme-btn-bg, #312e2b);
+  color: var(--theme-text-sec, #c3c2c1);
+  font-weight: 600;
+  border: 1px solid var(--theme-border, #3d3a36);
   border-radius: 3px;
+  box-shadow: none !important;
   transition: all 0.15s ease-in-out;
 }
 
-.btn-chess-danger:hover:not(:disabled),
+.btn-chess-danger:hover:not(:disabled) {
+  background-color: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
 .btn-chess-draw:hover:not(:disabled),
 .btn-chess-flip:hover:not(:disabled) {
-  background-color: var(--theme-accent-hover, #95bb58);
-  border-color: var(--theme-accent, #81b64c);
-  filter: brightness(1.08);
+  background-color: var(--theme-btn-hover, #3d3a36);
+  color: #ffffff;
+  border-color: var(--theme-border-light, #4a4742);
 }
 
 .btn-chess-danger:active:not(:disabled),

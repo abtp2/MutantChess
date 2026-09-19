@@ -31,6 +31,8 @@ import confetti from 'canvas-confetti';
 
 import CapturedPieces from './CapturedPieces';
 import ClassificationIcon from './ClassificationIcon';
+import BotAvatar from './BotAvatar';
+import { User } from 'lucide-react';
 import { fetchPlayerAvatar } from '../lib/gameImporter';
 
 export default function AnalysisBoard({
@@ -53,9 +55,11 @@ export default function AnalysisBoard({
     setGameInfo(initialGameInfo);
   }, [initialGameInfo]);
 
-  // Fetch missing avatars for players if imported
+  // Fetch missing avatars for players if imported from chess.com or lichess
   useEffect(() => {
     if (!gameInfo) return;
+    const isImportedSite = gameInfo.site === 'chesscom' || gameInfo.site === 'lichess' || gameInfo.site === 'chess.com';
+    if (!isImportedSite) return;
 
     if (gameInfo.white?.username && !gameInfo.white?.avatar) {
       fetchPlayerAvatar(gameInfo.white.username, gameInfo.site).then((avatar) => {
@@ -85,30 +89,37 @@ export default function AnalysisBoard({
   const [activeTab, setActiveTab] = useState('review'); // 'review' | 'moves' | 'graph'
   const [copiedFen, setCopiedFen] = useState(false);
   const [copiedPgn, setCopiedPgn] = useState(false);
-  const [userBoardWidth, setUserBoardWidth] = useState(() => {
-    if (typeof window !== 'undefined') {
+  const [userBoardWidth, setUserBoardWidth] = useState(null);
+
+  useEffect(() => {
+    try {
       const saved = localStorage.getItem('mutantchess_board_width');
       if (saved) {
         const parsed = parseInt(saved, 10);
-        if (!isNaN(parsed) && parsed >= 320 && parsed <= 1000) return parsed;
+        if (!isNaN(parsed) && parsed >= 320 && parsed <= 1000) {
+          setUserBoardWidth(parsed);
+        }
       }
-    }
-    return null;
-  });
+    } catch (e) {}
+  }, []);
 
   const handleAdjustBoardWidth = (delta) => {
     const current = userBoardWidth || boardHeight || 560;
     const nextWidth = Math.max(340, Math.min(1000, current + delta));
     setUserBoardWidth(nextWidth);
     if (typeof window !== 'undefined') {
-      localStorage.setItem('mutantchess_board_width', nextWidth.toString());
+      try {
+        localStorage.setItem('mutantchess_board_width', nextWidth.toString());
+      } catch (e) {}
     }
   };
 
   const handleResetBoardWidth = () => {
     setUserBoardWidth(null);
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('mutantchess_board_width');
+      try {
+        localStorage.removeItem('mutantchess_board_width');
+      } catch (e) {}
     }
   };
 
@@ -153,52 +164,113 @@ export default function AnalysisBoard({
     return c;
   });
 
-  // Evaluate current position live with Stockfish
-  useEffect(() => {
-    let active = true;
-    const currentFen = fensHistory[currentStep + 1] || fensHistory[0];
+  const currentClassifiedMove = reviewData && currentStep >= 0 ? reviewData.classifiedMoves[currentStep] : null;
+  const isMistakeOrMiss = Boolean(
+    currentClassifiedMove &&
+    ['miss', 'blunder', 'mistake', 'inaccuracy'].includes(currentClassifiedMove.classification?.id)
+  );
 
-    if (reviewData && reviewData.evaluations[currentStep + 1]) {
-      const ev = reviewData.evaluations[currentStep + 1];
-      setLiveEval(ev);
-      if (showBestLine && ev.bestMove && ev.bestMove.length >= 4) {
-        setBestMoveArrow({
-          from: ev.bestMove.substring(0, 2),
-          to: ev.bestMove.substring(2, 4),
-          color: '#81b64c',
-        });
-      } else {
-        setBestMoveArrow(null);
-      }
-      return;
+  const handleToggleBestLine = () => {
+    const nextShow = !showBestLine;
+    setShowBestLine(nextShow);
+
+    if (isMistakeOrMiss) {
+      const targetFen = nextShow
+        ? (fensHistory[currentStep] || fensHistory[0])
+        : (fensHistory[currentStep + 1] || fensHistory[0]);
+      setChess(new Chess(targetFen));
     }
-
-    stockfishService.evaluatePosition({ fen: currentFen, depth: 10 }).then((res) => {
-      if (!active || !res) return;
-      setLiveEval(res);
-      if (showBestLine && res.bestMove && res.bestMove.length >= 4) {
-        setBestMoveArrow({
-          from: res.bestMove.substring(0, 2),
-          to: res.bestMove.substring(2, 4),
-          color: '#81b64c',
-        });
-      } else {
-        setBestMoveArrow(null);
-      }
-    });
-
-    return () => {
-      active = false;
-    };
-  }, [currentStep, fensHistory, reviewData, showBestLine]);
+  };
 
   const goToStep = (stepIndex) => {
+    setShowBestLine(false);
     const clamped = Math.max(-1, Math.min(moves.length - 1, stepIndex));
     setCurrentStep(clamped);
 
     const targetFen = fensHistory[clamped + 1] || fensHistory[0];
     setChess(new Chess(targetFen));
   };
+
+  // Evaluate current position live with Stockfish or draw validated best move arrow
+  useEffect(() => {
+    let active = true;
+
+    const normalFen = fensHistory[currentStep + 1] || fensHistory[0];
+    const rewindFen = fensHistory[currentStep] || fensHistory[0];
+    const displayedFen = showBestLine && isMistakeOrMiss ? rewindFen : normalFen;
+
+    // Synchronize live evaluation bar
+    if (reviewData) {
+      const evalIndex = showBestLine && isMistakeOrMiss ? currentStep : (currentStep + 1);
+      const ev = reviewData.evaluations[evalIndex] || reviewData.evaluations[currentStep + 1];
+      if (ev) setLiveEval(ev);
+    }
+
+    if (!showBestLine) {
+      setBestMoveArrow(null);
+      return;
+    }
+
+    // 1. If showing best line for a mistake/miss/blunder:
+    // Arrow originates from the rewind position BEFORE the mistake was made
+    if (isMistakeOrMiss && currentClassifiedMove?.bestMove && currentClassifiedMove.bestMove.length >= 4) {
+      const from = currentClassifiedMove.bestMove.substring(0, 2);
+      const to = currentClassifiedMove.bestMove.substring(2, 4);
+      try {
+        const testBoard = new Chess(rewindFen);
+        const p = testBoard.get(from);
+        if (p && p.color === testBoard.turn()) {
+          setBestMoveArrow({ from, to, color: '#81b64c' });
+          return;
+        }
+      } catch (e) {}
+      setBestMoveArrow(null);
+      return;
+    }
+
+    // 2. If showing best line for a good/best move from reviewData:
+    if (reviewData && reviewData.evaluations[currentStep + 1]) {
+      const ev = reviewData.evaluations[currentStep + 1];
+      if (ev.bestMove && ev.bestMove.length >= 4) {
+        const from = ev.bestMove.substring(0, 2);
+        const to = ev.bestMove.substring(2, 4);
+        try {
+          const testBoard = new Chess(normalFen);
+          const p = testBoard.get(from);
+          if (p && p.color === testBoard.turn()) {
+            setBestMoveArrow({ from, to, color: '#81b64c' });
+            return;
+          }
+        } catch (e) {}
+      }
+      setBestMoveArrow(null);
+      return;
+    }
+
+    // 3. Fallback: live Stockfish engine evaluation
+    if (isAnalyzing) return;
+    stockfishService.evaluatePosition({ fen: displayedFen, depth: 10 }).then((res) => {
+      if (!active || !res) return;
+      setLiveEval(res);
+      if (res.bestMove && res.bestMove.length >= 4) {
+        const from = res.bestMove.substring(0, 2);
+        const to = res.bestMove.substring(2, 4);
+        try {
+          const testBoard = new Chess(displayedFen);
+          const p = testBoard.get(from);
+          if (p && p.color === testBoard.turn()) {
+            setBestMoveArrow({ from, to, color: '#81b64c' });
+            return;
+          }
+        } catch (e) {}
+      }
+      setBestMoveArrow(null);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [currentStep, fensHistory, reviewData, showBestLine, isMistakeOrMiss, currentClassifiedMove]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -302,8 +374,7 @@ export default function AnalysisBoard({
     }
   };
 
-  const currentClassifiedMove = reviewData && currentStep >= 0 ? reviewData.classifiedMoves[currentStep] : null;
-  const currentAnnotation = currentClassifiedMove
+  const currentAnnotation = currentClassifiedMove && !(showBestLine && isMistakeOrMiss)
     ? {
         square: currentClassifiedMove.to,
         classification: currentClassifiedMove.classification,
@@ -344,41 +415,76 @@ export default function AnalysisBoard({
     return { capturedByWhite, capturedByBlack };
   }, [chess]);
 
-  const topPlayer = isFlipped
-    ? {
-        name: gameInfo?.white?.username || 'White',
-        rating: gameInfo?.white?.rating,
-        avatar: gameInfo?.white?.avatar,
-        accuracy: reviewData?.whiteAccuracy,
-        color: 'w',
-        captured: capturedPieces.capturedByWhite,
-      }
-    : {
-        name: gameInfo?.black?.username || 'Black',
-        rating: gameInfo?.black?.rating,
-        avatar: gameInfo?.black?.avatar,
-        accuracy: reviewData?.blackAccuracy,
-        color: 'b',
-        captured: capturedPieces.capturedByBlack,
-      };
+  const isImportedSite = Boolean(
+    gameInfo?.site === 'chesscom' ||
+    gameInfo?.site === 'lichess' ||
+    gameInfo?.site === 'chess.com'
+  );
 
-  const bottomPlayer = isFlipped
-    ? {
-        name: gameInfo?.black?.username || 'Black',
-        rating: gameInfo?.black?.rating,
-        avatar: gameInfo?.black?.avatar,
-        accuracy: reviewData?.blackAccuracy,
-        color: 'b',
-        captured: capturedPieces.capturedByBlack,
-      }
-    : {
-        name: gameInfo?.white?.username || 'White',
-        rating: gameInfo?.white?.rating,
-        avatar: gameInfo?.white?.avatar,
-        accuracy: reviewData?.whiteAccuracy,
-        color: 'w',
-        captured: capturedPieces.capturedByWhite,
+  const isBotMatch = Boolean(
+    gameInfo?.site === 'vs_bot' ||
+    gameInfo?.isBotMatch ||
+    gameInfo?.bot ||
+    gameInfo?.white?.isBot ||
+    gameInfo?.black?.isBot
+  );
+
+  const buildPlayerData = (playerColor) => {
+    const rawData = playerColor === 'w' ? gameInfo?.white : gameInfo?.black;
+    const accuracy = playerColor === 'w' ? reviewData?.whiteAccuracy : reviewData?.blackAccuracy;
+    const captured = playerColor === 'w' ? capturedPieces.capturedByWhite : capturedPieces.capturedByBlack;
+    const isBot = Boolean(rawData?.isBot || (isBotMatch && rawData?.username && rawData.username !== 'You' && rawData.username !== 'Player'));
+
+    if (isImportedSite) {
+      return {
+        name: rawData?.username || (playerColor === 'w' ? 'White' : 'Black'),
+        rating: rawData?.rating || null,
+        avatar: rawData?.avatar || null,
+        showAvatar: true,
+        showRating: Boolean(rawData?.rating),
+        isBot: false,
+        isUser: false,
+        color: playerColor,
+        accuracy,
+        captured,
       };
+    }
+
+    if (isBotMatch && isBot) {
+      const botObj = rawData?.bot || gameInfo?.bot || { name: rawData?.username, elo: rawData?.rating, image: rawData?.avatar };
+      return {
+        name: botObj?.name || rawData?.username || 'AI Bot',
+        rating: botObj?.elo || rawData?.rating || '1000',
+        avatar: botObj?.image || rawData?.avatar || '/bots/ashutosh_dev.jpg',
+        bot: botObj,
+        showAvatar: true,
+        showRating: true,
+        isBot: true,
+        isUser: false,
+        color: playerColor,
+        accuracy,
+        captured,
+      };
+    }
+
+    // Default or user vs bot
+    const isUser = rawData?.isUser || rawData?.username === 'You';
+    return {
+      name: isUser ? 'You' : (rawData?.username || (playerColor === 'w' ? 'White' : 'Black')),
+      rating: null,
+      avatar: null,
+      showAvatar: false,
+      showRating: false,
+      isBot: false,
+      isUser,
+      color: playerColor,
+      accuracy,
+      captured,
+    };
+  };
+
+  const topPlayer = isFlipped ? buildPlayerData('w') : buildPlayerData('b');
+  const bottomPlayer = isFlipped ? buildPlayerData('b') : buildPlayerData('w');
 
   return (
     <div className="w-full max-w-[1680px] mx-auto px-1 sm:px-3 py-1 sm:py-3 select-none animate-fadeIn">
@@ -395,15 +501,21 @@ export default function AnalysisBoard({
             style={{ width: '100%', maxWidth: boardHeight ? `${boardHeight + 24}px` : '100%' }}
           >
             <div className="flex items-center gap-3 min-w-0">
-              {topPlayer.avatar ? (
+              {topPlayer.isBot ? (
+                <BotAvatar bot={topPlayer.bot || topPlayer.avatar} size="md" className="shrink-0" />
+              ) : topPlayer.showAvatar && topPlayer.avatar ? (
                 <img
                   src={topPlayer.avatar}
                   alt={topPlayer.name}
-                  className="w-10 h-10 rounded-sm border border-theme-border object-cover shrink-0 shadow-xs"
+                  className="w-10 h-10 rounded-sm border border-theme-border object-cover shrink-0"
                 />
+              ) : topPlayer.isUser ? (
+                <div className="w-10 h-10 rounded-sm bg-theme-sub border border-theme-border flex items-center justify-center font-bold text-sm shrink-0 text-theme-accent">
+                  <User className="w-5 h-5" />
+                </div>
               ) : (
                 <div
-                  className={`w-10 h-10 rounded-sm flex items-center justify-center font-bold text-sm shrink-0 shadow-xs ${
+                  className={`w-10 h-10 rounded-sm flex items-center justify-center font-bold text-sm shrink-0 ${
                     topPlayer.color === 'w'
                       ? 'bg-white text-gray-900 border border-gray-300'
                       : 'bg-theme-btn text-white border border-theme-border'
@@ -417,19 +529,20 @@ export default function AnalysisBoard({
                   <span className="font-bold text-sm text-theme-text truncate max-w-[150px] sm:max-w-[220px]">
                     {topPlayer.name}
                   </span>
-                  {topPlayer.rating && (
+                  {topPlayer.isBot && (
+                    <span className="text-[10px] font-black uppercase tracking-wider bg-theme-btn border border-theme-border px-1.5 py-0.2 rounded-xs text-theme-sec">
+                      BOT
+                    </span>
+                  )}
+                  {topPlayer.showRating && topPlayer.rating && (
                     <span className="text-xs font-mono font-medium text-theme-muted">
                       ({topPlayer.rating})
                     </span>
                   )}
-                  {topPlayer.accuracy !== undefined && (
-                    <span className="text-[11px] font-mono font-bold bg-theme-btn text-theme-accent px-2 py-0.5 rounded-xs border border-theme-border">
-                      {topPlayer.accuracy}%
-                    </span>
-                  )}
                 </div>
                 <CapturedPieces
-                  captured={topPlayer.captured}
+                  whiteCaptured={capturedPieces.capturedByWhite}
+                  blackCaptured={capturedPieces.capturedByBlack}
                   playerColor={topPlayer.color}
                 />
               </div>
@@ -457,9 +570,13 @@ export default function AnalysisBoard({
               customBoardWidth={userBoardWidth}
               annotation={currentAnnotation}
               lastMove={
-                currentStep >= 0 && moves[currentStep]
-                  ? { from: moves[currentStep].from, to: moves[currentStep].to }
-                  : null
+                showBestLine && isMistakeOrMiss
+                  ? (currentStep > 0 && moves[currentStep - 1]
+                      ? { from: moves[currentStep - 1].from, to: moves[currentStep - 1].to }
+                      : null)
+                  : (currentStep >= 0 && moves[currentStep]
+                      ? { from: moves[currentStep].from, to: moves[currentStep].to }
+                      : null)
               }
             />
           </div>
@@ -470,15 +587,21 @@ export default function AnalysisBoard({
             style={{ width: '100%', maxWidth: boardHeight ? `${boardHeight + 24}px` : '100%' }}
           >
             <div className="flex items-center gap-3 min-w-0">
-              {bottomPlayer.avatar ? (
+              {bottomPlayer.isBot ? (
+                <BotAvatar bot={bottomPlayer.bot || bottomPlayer.avatar} size="md" className="shrink-0" />
+              ) : bottomPlayer.showAvatar && bottomPlayer.avatar ? (
                 <img
                   src={bottomPlayer.avatar}
                   alt={bottomPlayer.name}
-                  className="w-10 h-10 rounded-sm border border-theme-border object-cover shrink-0 shadow-xs"
+                  className="w-10 h-10 rounded-sm border border-theme-border object-cover shrink-0"
                 />
+              ) : bottomPlayer.isUser ? (
+                <div className="w-10 h-10 rounded-sm bg-theme-sub border border-theme-border flex items-center justify-center font-bold text-sm shrink-0 text-theme-accent">
+                  <User className="w-5 h-5" />
+                </div>
               ) : (
                 <div
-                  className={`w-10 h-10 rounded-sm flex items-center justify-center font-bold text-sm shrink-0 shadow-xs ${
+                  className={`w-10 h-10 rounded-sm flex items-center justify-center font-bold text-sm shrink-0 ${
                     bottomPlayer.color === 'w'
                       ? 'bg-white text-gray-900 border border-gray-300'
                       : 'bg-theme-btn text-white border border-theme-border'
@@ -492,19 +615,20 @@ export default function AnalysisBoard({
                   <span className="font-bold text-sm text-theme-text truncate max-w-[150px] sm:max-w-[220px]">
                     {bottomPlayer.name}
                   </span>
-                  {bottomPlayer.rating && (
+                  {bottomPlayer.isBot && (
+                    <span className="text-[10px] font-black uppercase tracking-wider bg-theme-btn border border-theme-border px-1.5 py-0.2 rounded-xs text-theme-sec">
+                      BOT
+                    </span>
+                  )}
+                  {bottomPlayer.showRating && bottomPlayer.rating && (
                     <span className="text-xs font-mono font-medium text-theme-muted">
                       ({bottomPlayer.rating})
                     </span>
                   )}
-                  {bottomPlayer.accuracy !== undefined && (
-                    <span className="text-[11px] font-mono font-bold bg-theme-btn text-theme-accent px-2 py-0.5 rounded-xs border border-theme-border">
-                      {bottomPlayer.accuracy}%
-                    </span>
-                  )}
                 </div>
                 <CapturedPieces
-                  captured={bottomPlayer.captured}
+                  whiteCaptured={capturedPieces.capturedByWhite}
+                  blackCaptured={capturedPieces.capturedByBlack}
                   playerColor={bottomPlayer.color}
                 />
               </div>
@@ -516,11 +640,8 @@ export default function AnalysisBoard({
             className="w-full mt-2 px-3 sm:px-4 py-2 bg-theme-panel rounded-sm border border-theme-border flex items-center justify-between text-xs font-mono shadow-xs transition-all"
             style={{ width: '100%', maxWidth: boardHeight ? `${boardHeight + 24}px` : '100%' }}
           >
-            {/* Left: Move number & Flip Board button */}
+            {/* Left: Flip Board & Copy Tools */}
             <div className="flex items-center gap-2">
-              <span className="px-2.5 py-1 rounded-xs bg-theme-sub border border-theme-border text-xs font-bold font-mono text-theme-sec">
-                {currentStep >= 0 ? `Move ${Math.floor(currentStep / 2) + 1}` : 'Start Position'}
-              </span>
               <button
                 onClick={() => setIsFlipped(!isFlipped)}
                 title="Flip board view"
@@ -529,6 +650,25 @@ export default function AnalysisBoard({
                 <RefreshCw className="w-3.5 h-3.5 text-theme-sec" />
                 <span>Flip</span>
               </button>
+
+              <div className="flex items-center gap-1 border-l border-theme-border pl-2">
+                <button
+                  onClick={handleCopyFen}
+                  title="Copy current position FEN"
+                  className="px-2 py-1 rounded-xs bg-theme-sub hover:bg-theme-btn text-theme-muted hover:text-white border border-theme-border transition-colors cursor-pointer flex items-center gap-1 text-[11px] font-sans"
+                >
+                  {copiedFen ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                  <span>{copiedFen ? 'Copied' : 'FEN'}</span>
+                </button>
+                <button
+                  onClick={handleCopyPgn}
+                  title="Copy game PGN"
+                  className="px-2 py-1 rounded-xs bg-theme-sub hover:bg-theme-btn text-theme-muted hover:text-white border border-theme-border transition-colors cursor-pointer flex items-center gap-1 text-[11px] font-sans"
+                >
+                  {copiedPgn ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                  <span>{copiedPgn ? 'Copied' : 'PGN'}</span>
+                </button>
+              </div>
             </div>
 
             {/* Right: Board Size Controls (- Auto / 400px +) */}
@@ -544,6 +684,7 @@ export default function AnalysisBoard({
               <button
                 onClick={handleResetBoardWidth}
                 title="Fit to screen (Auto)"
+                suppressHydrationWarning
                 className={`text-[11px] font-mono px-2 py-0.5 rounded-xs transition-colors cursor-pointer ${
                   userBoardWidth === null ? 'bg-theme-accent text-white font-bold' : 'text-theme-sec hover:text-white'
                 }`}
@@ -695,13 +836,13 @@ export default function AnalysisBoard({
                   {/* Engine Best Line Suggestion */}
                   {currentClassifiedMove.bestMoveSan && (
                     <div className="text-[11px] text-theme-muted bg-theme-sub p-2 rounded-xs border border-theme-border font-mono flex items-center justify-between">
-                      <div className="flex items-center gap-1">
-                        <span>Best:</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-theme-muted">Best:</span>
                         <span className="font-bold text-theme-accent">{currentClassifiedMove.bestMoveSan}</span>
                       </div>
-                      {currentClassifiedMove.currEval?.pv && (
+                      {(currentClassifiedMove.bestMovePv || currentClassifiedMove.currEval?.pv) && (
                         <span className="text-[10px] text-theme-muted truncate max-w-[200px]">
-                          {currentClassifiedMove.currEval.pv.split(' ').slice(0, 4).join(' ')}
+                          {(currentClassifiedMove.bestMovePv || currentClassifiedMove.currEval.pv).split(' ').slice(0, 4).join(' ')}
                         </span>
                       )}
                     </div>
@@ -718,7 +859,7 @@ export default function AnalysisBoard({
                     </button>
 
                     <button
-                      onClick={() => setShowBestLine(!showBestLine)}
+                      onClick={handleToggleBestLine}
                       className={`py-1.5 px-2 rounded-sm text-xs font-semibold flex items-center justify-center gap-1 border transition-colors ${
                         showBestLine
                           ? 'bg-theme-accent text-white border-theme-accent'
@@ -726,7 +867,7 @@ export default function AnalysisBoard({
                       }`}
                     >
                       <Eye className="w-3.5 h-3.5" />
-                      <span>Show Line</span>
+                      <span>{showBestLine ? 'Hide Line' : 'Show Line'}</span>
                     </button>
 
                     <button
@@ -869,31 +1010,8 @@ export default function AnalysisBoard({
               <RotateCcw className="w-3.5 h-3.5" />
             </button>
           </div>
-
-          {/* Copy FEN & PGN Buttons */}
-          <div className="grid grid-cols-2 gap-2 pt-1">
-            <button
-              onClick={handleCopyFen}
-              className="py-2 px-3 rounded-sm text-xs font-semibold btn-chess-utility flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-              title="Copy current position FEN"
-            >
-              {copiedFen ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-theme-muted" />}
-              <span>{copiedFen ? 'FEN Copied!' : 'Copy FEN'}</span>
-            </button>
-            <button
-              onClick={handleCopyPgn}
-              className="py-2 px-3 rounded-sm text-xs font-semibold btn-chess-utility flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-              title="Copy game PGN"
-            >
-              {copiedPgn ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-theme-muted" />}
-              <span>{copiedPgn ? 'PGN Copied!' : 'Copy PGN'}</span>
-            </button>
-          </div>
-
         </div>
-
       </div>
-
     </div>
   );
 }

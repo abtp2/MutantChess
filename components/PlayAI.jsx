@@ -1,7 +1,7 @@
 // Authentic Chess.com style Play vs Computer view with synchronized board and White-activated timer
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Chess } from 'chess.js';
 import ChessBoard from './ChessBoard';
 import EvalBar from './EvalBar';
@@ -40,11 +40,60 @@ import BotAvatar from './BotAvatar';
 export default function PlayAI({
   boardThemeId = 'stone',
   onAnalyzeGame,
+  initialFen = null,
+  initialMoves = [],
+  openingName = null,
 }) {
-  const [chess, setChess] = useState(() => new Chess());
-  const [historyMoves, setHistoryMoves] = useState([]);
-  const [currentMoveIndex, setCurrentMoveIndex] = useState(-1);
-  const [playerColor, setPlayerColor] = useState('w'); // 'w' or 'b'
+  const setupInitialState = () => {
+    const c = new Chess();
+    const movesApplied = [];
+    const capW = [];
+    const capB = [];
+    let lastM = null;
+
+    if (initialMoves && initialMoves.length > 0) {
+      for (const m of initialMoves) {
+        try {
+          const res = c.move(m);
+          if (res) {
+            movesApplied.push(res);
+            lastM = { from: res.from, to: res.to };
+            if (res.captured) {
+              const capturedObj = { type: res.captured, color: res.color === 'w' ? 'b' : 'w' };
+              if (res.color === 'w') capW.push(capturedObj);
+              else capB.push(capturedObj);
+            }
+          }
+        } catch (e) {
+          break;
+        }
+      }
+    } else if (initialFen) {
+      try {
+        c.load(initialFen);
+      } catch (e) {}
+    }
+
+    const currentTurn = c.turn();
+    const assignedPlayerColor = currentTurn;
+
+    return {
+      chess: c,
+      historyMoves: movesApplied,
+      currentMoveIndex: movesApplied.length - 1,
+      playerColor: assignedPlayerColor,
+      isFlipped: assignedPlayerColor === 'b',
+      lastMove: lastM,
+      capturedWhite: capW,
+      capturedBlack: capB,
+    };
+  };
+
+  const [initialData] = useState(() => setupInitialState());
+  const [chess, setChess] = useState(initialData.chess);
+  const [historyMoves, setHistoryMoves] = useState(initialData.historyMoves);
+  const [currentMoveIndex, setCurrentMoveIndex] = useState(initialData.currentMoveIndex);
+  const [playerColor, setPlayerColor] = useState(initialData.playerColor);
   const [selectedBot, setSelectedBot] = useState(BOTS[1] || BOTS[0]); // Ashutosh_dev (1000 Elo)
   const [customElo, setCustomElo] = useState(1000);
   const [useCustomElo, setUseCustomElo] = useState(false);
@@ -54,40 +103,81 @@ export default function PlayAI({
   const [gameOverType, setGameOverType] = useState(null); // 'checkmate' | 'resignation' | 'timeout' | 'draw'
   const [copiedFen, setCopiedFen] = useState(false);
   const [copiedPgn, setCopiedPgn] = useState(false);
-  const [lastMove, setLastMove] = useState(null);
+  const [lastMove, setLastMove] = useState(initialData.lastMove);
   const [evalScore, setEvalScore] = useState({ cp: 0, mate: null });
-  const [capturedWhite, setCapturedWhite] = useState([]);
-  const [capturedBlack, setCapturedBlack] = useState([]);
-  const [botMessage, setBotMessage] = useState((BOTS[1] || BOTS[0]).quotes.start[0]);
+  const [capturedWhite, setCapturedWhite] = useState(initialData.capturedWhite);
+  const [capturedBlack, setCapturedBlack] = useState(initialData.capturedBlack);
+  const [botMessage, setBotMessage] = useState(
+    openingName
+      ? `Practicing ${openingName}. You play as ${initialData.playerColor === 'w' ? 'White' : 'Black'}!`
+      : (BOTS[1] || BOTS[0]).quotes.start[0]
+  );
   const [showBotPicker, setShowBotPicker] = useState(false);
   const [activeTab, setActiveTab] = useState('game'); // 'game' | 'moves' | 'settings'
-  const [isFlipped, setIsFlipped] = useState(false);
+  const [isFlipped, setIsFlipped] = useState(initialData.isFlipped);
+
+  useEffect(() => {
+    if (initialFen || (initialMoves && initialMoves.length > 0)) {
+      const data = setupInitialState();
+      setChess(data.chess);
+      chessRef.current = data.chess;
+      setHistoryMoves(data.historyMoves);
+      setCurrentMoveIndex(data.currentMoveIndex);
+      setPlayerColor(data.playerColor);
+      playerColorRef.current = data.playerColor;
+      setIsFlipped(data.isFlipped);
+      setLastMove(data.lastMove);
+      setCapturedWhite(data.capturedWhite);
+      setCapturedBlack(data.capturedBlack);
+      setGameResult(null);
+      gameResultRef.current = null;
+      setGameOverReason('');
+      setGameOverType(null);
+      setCopiedFen(false);
+      setCopiedPgn(false);
+      setIsBotThinking(false);
+      isBotThinkingRef.current = false;
+      setIsTimerStarted(false);
+      setPlayerTime(600);
+      setBotTime(600);
+      if (openingName) {
+        setBotMessage(`Practicing ${openingName}. You play as ${data.playerColor === 'w' ? 'White' : 'Black'}!`);
+      }
+    }
+  }, [initialFen, initialMoves, openingName]);
   const [boardHeight, setBoardHeight] = useState(560);
   const [premoveQueue, setPremoveQueue] = useState([]);
-  const [userBoardWidth, setUserBoardWidth] = useState(() => {
-    if (typeof window !== 'undefined') {
+  const [userBoardWidth, setUserBoardWidth] = useState(null);
+
+  useEffect(() => {
+    try {
       const saved = localStorage.getItem('mutantchess_board_width');
       if (saved) {
         const parsed = parseInt(saved, 10);
-        if (!isNaN(parsed) && parsed >= 320 && parsed <= 1000) return parsed;
+        if (!isNaN(parsed) && parsed >= 320 && parsed <= 1000) {
+          setUserBoardWidth(parsed);
+        }
       }
-    }
-    return null;
-  });
+    } catch (e) {}
+  }, []);
 
   const handleAdjustBoardWidth = (delta) => {
     const current = userBoardWidth || boardHeight || 560;
     const nextWidth = Math.max(340, Math.min(1000, current + delta));
     setUserBoardWidth(nextWidth);
     if (typeof window !== 'undefined') {
-      localStorage.setItem('mutantchess_board_width', nextWidth.toString());
+      try {
+        localStorage.setItem('mutantchess_board_width', nextWidth.toString());
+      } catch (e) {}
     }
   };
 
   const handleResetBoardWidth = () => {
     setUserBoardWidth(null);
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('mutantchess_board_width');
+      try {
+        localStorage.removeItem('mutantchess_board_width');
+      } catch (e) {}
     }
   };
 
@@ -111,10 +201,17 @@ export default function PlayAI({
   const isBotThinkingRef = useRef(false);
   isBotThinkingRef.current = isBotThinking;
 
-  const handleCancelPremoves = () => {
+  const handleCancelPremoves = useCallback(() => {
     premoveQueueRef.current = [];
     setPremoveQueue([]);
-  };
+  }, []);
+
+  const handlePremove = useCallback(({ from, to, promotion = 'q' }) => {
+    if (gameResultRef.current) return;
+    const pm = { from, to, promotion };
+    premoveQueueRef.current = [pm];
+    setPremoveQueue([pm]);
+  }, []);
 
   // Helper to force active color in FEN
   const setFenTurn = (fen, targetColor) => {
@@ -159,6 +256,15 @@ export default function PlayAI({
       return chess;
     }
   }, [chess, playerColor, isBotThinking, premoveQueue]);
+
+  const memoizedEvalBar = useMemo(() => (
+    <EvalBar
+      cp={evalScore.cp}
+      mate={evalScore.mate}
+      isFlipped={isFlipped}
+      height={boardHeight}
+    />
+  ), [evalScore.cp, evalScore.mate, isFlipped, boardHeight]);
 
   const playMoveAudio = (res) => {
     if (chessRef.current.isGameOver()) {
@@ -262,7 +368,7 @@ export default function PlayAI({
     try {
       const c = new Chess();
       c.header(
-        'Event', 'MutantChess Match',
+        'Event', openingName ? `MutantChess Practice: ${openingName}` : 'MutantChess Match',
         'Site', 'MutantChess',
         'Date', new Date().toISOString().split('T')[0].replace(/-/g, '.'),
         'White', playerColor === 'w' ? 'You' : selectedBot.name,
@@ -517,8 +623,6 @@ export default function PlayAI({
         return true;
       }
 
-      updateEval(next.fen());
-
       // Mark bot as thinking synchronously
       setIsBotThinking(true);
       isBotThinkingRef.current = true;
@@ -526,7 +630,7 @@ export default function PlayAI({
       // Trigger bot move
       setTimeout(() => {
         triggerBotMove(next);
-      }, 50);
+      }, 40);
 
       return true;
     } catch (err) {
@@ -550,8 +654,8 @@ export default function PlayAI({
   };
 
   // Board move router: handles live moves smoothly
-  const handleBoardMove = ({ from, to, promotion = 'q' }) => {
-    if (gameResult || isBotThinkingRef.current) return false;
+  const handleBoardMove = useCallback(({ from, to, promotion = 'q' }) => {
+    if (gameResultRef.current || isBotThinkingRef.current) return false;
 
     // If reviewing earlier moves, snap to latest move
     if (historyMoves.length > 0 && currentMoveIndex !== historyMoves.length - 1) {
@@ -565,16 +669,43 @@ export default function PlayAI({
     }
 
     return executePlayerMove({ from, to, promotion }, currentActiveChess);
-  };
+  }, [historyMoves.length, currentMoveIndex, chess]);
 
-  const startNewGame = (color = playerColor, bot = selectedBot) => {
+  const startNewGame = (color = playerColor, bot = selectedBot, resetToStandard = false) => {
     handleCancelPremoves();
-    const fresh = new Chess();
+    let fresh;
+    let movesApplied = [];
+    let capW = [];
+    let capB = [];
+    let lastM = null;
+
+    if (!resetToStandard && initialMoves && initialMoves.length > 0) {
+      fresh = new Chess();
+      for (const m of initialMoves) {
+        try {
+          const res = fresh.move(m);
+          if (res) {
+            movesApplied.push(res);
+            lastM = { from: res.from, to: res.to };
+            if (res.captured) {
+              const capturedObj = { type: res.captured, color: res.color === 'w' ? 'b' : 'w' };
+              if (res.color === 'w') capW.push(capturedObj);
+              else capB.push(capturedObj);
+            }
+          }
+        } catch (e) {
+          break;
+        }
+      }
+    } else {
+      fresh = new Chess(resetToStandard ? undefined : (initialFen || undefined));
+    }
+
     setChess(fresh);
     chessRef.current = fresh;
-    setHistoryMoves([]);
-    setCurrentMoveIndex(-1);
-    setLastMove(null);
+    setHistoryMoves(movesApplied);
+    setCurrentMoveIndex(movesApplied.length - 1);
+    setLastMove(lastM);
     setGameResult(null);
     gameResultRef.current = null;
     setGameOverReason('');
@@ -583,8 +714,8 @@ export default function PlayAI({
     setCopiedPgn(false);
     setIsBotThinking(false);
     isBotThinkingRef.current = false;
-    setCapturedWhite([]);
-    setCapturedBlack([]);
+    setCapturedWhite(capW);
+    setCapturedBlack(capB);
     setEvalScore({ cp: 0, mate: null });
     
     setPlayerColor(color);
@@ -597,14 +728,13 @@ export default function PlayAI({
     setIsFlipped(color === 'b');
     setBotMessage(bot.quotes.start[Math.floor(Math.random() * bot.quotes.start.length)]);
 
-    if (color === 'b') {
-      // Bot is White: clock starts immediately and bot begins calculating move 1!
+    if (fresh.turn() !== color) {
+      // Bot is to move: clock starts immediately and bot begins calculating!
       setIsTimerStarted(true);
       setTimeout(() => {
         triggerBotMove(fresh);
       }, 150);
     } else {
-      // Human is White: clock starts when White makes move 1
       setIsTimerStarted(false);
     }
   };
@@ -686,7 +816,8 @@ export default function PlayAI({
                   </span>
                 </div>
                 <CapturedPieces
-                  captured={playerColor === 'w' ? capturedBlack : capturedWhite}
+                  whiteCaptured={capturedWhite}
+                  blackCaptured={capturedBlack}
                   playerColor={playerColor === 'w' ? 'b' : 'w'}
                 />
               </div>
@@ -715,21 +846,15 @@ export default function PlayAI({
           {/* Board with integrated zero-gap Eval Bar */}
           <div className="w-full flex justify-center">
             <ChessBoard
-              evalBar={
-                <EvalBar
-                  cp={evalScore.cp}
-                  mate={evalScore.mate}
-                  isFlipped={isFlipped}
-                  height={boardHeight}
-                />
-              }
+              evalBar={memoizedEvalBar}
               chess={chess}
               onMove={handleBoardMove}
+              onPremove={handlePremove}
               playerColor={playerColor}
               isFlipped={isFlipped}
               themeId={boardThemeId}
               lastMove={lastMove}
-              disabled={isBotThinking || gameResult !== null}
+              disabled={gameResult !== null}
               onBoardWidthChange={setBoardHeight}
               customBoardWidth={userBoardWidth}
               premoveQueue={premoveQueue}
@@ -751,7 +876,8 @@ export default function PlayAI({
                   <span className="font-bold text-sm text-theme-text">You</span>
                 </div>
                 <CapturedPieces
-                  captured={playerColor === 'w' ? capturedWhite : capturedBlack}
+                  whiteCaptured={capturedWhite}
+                  blackCaptured={capturedBlack}
                   playerColor={playerColor}
                 />
               </div>
@@ -774,11 +900,8 @@ export default function PlayAI({
             className="w-full mt-2 px-3 sm:px-4 py-2 bg-theme-panel rounded-sm border border-theme-border flex items-center justify-between text-xs font-mono shadow-xs transition-all"
             style={{ width: '100%', maxWidth: boardHeight ? `${boardHeight + 24}px` : '100%' }}
           >
-            {/* Left: Move number & Flip Board button */}
+            {/* Left: Flip Board & Copy Tools */}
             <div className="flex items-center gap-2">
-              <span className="px-2.5 py-1 rounded-xs bg-theme-sub border border-theme-border text-xs font-bold font-mono text-theme-sec">
-                {historyMoves.length > 0 ? `Move ${Math.ceil(historyMoves.length / 2)}` : 'Start Position'}
-              </span>
               <button
                 onClick={() => setIsFlipped(!isFlipped)}
                 title="Flip board view"
@@ -787,6 +910,25 @@ export default function PlayAI({
                 <RefreshCw className="w-3.5 h-3.5 text-theme-sec" />
                 <span>Flip</span>
               </button>
+
+              <div className="flex items-center gap-1 border-l border-theme-border pl-2">
+                <button
+                  onClick={handleCopyFen}
+                  title="Copy current position FEN"
+                  className="px-2 py-1 rounded-xs bg-theme-sub hover:bg-theme-btn text-theme-muted hover:text-white border border-theme-border transition-colors cursor-pointer flex items-center gap-1 text-[11px] font-sans"
+                >
+                  {copiedFen ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                  <span>{copiedFen ? 'Copied' : 'FEN'}</span>
+                </button>
+                <button
+                  onClick={handleCopyPgn}
+                  title="Copy game PGN"
+                  className="px-2 py-1 rounded-xs bg-theme-sub hover:bg-theme-btn text-theme-muted hover:text-white border border-theme-border transition-colors cursor-pointer flex items-center gap-1 text-[11px] font-sans"
+                >
+                  {copiedPgn ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                  <span>{copiedPgn ? 'Copied' : 'PGN'}</span>
+                </button>
+              </div>
             </div>
 
             {/* Right: Board Size Controls (- Auto / 400px +) */}
@@ -802,6 +944,7 @@ export default function PlayAI({
               <button
                 onClick={handleResetBoardWidth}
                 title="Fit to screen (Auto)"
+                suppressHydrationWarning
                 className={`text-[11px] font-mono px-2 py-0.5 rounded-xs transition-colors cursor-pointer ${
                   userBoardWidth === null ? 'bg-theme-accent text-white font-bold' : 'text-theme-sec hover:text-white'
                 }`}
@@ -916,14 +1059,31 @@ export default function PlayAI({
                       <button
                         onClick={() =>
                           onAnalyzeGame(historyMoves, null, {
+                            site: 'vs_bot',
+                            isBotMatch: true,
+                            bot: selectedBot,
                             white:
                               playerColor === 'w'
-                                ? { username: 'You', rating: 'Player', avatar: null }
-                                : { username: selectedBot.name, rating: selectedBot.elo, avatar: selectedBot.avatar },
+                                ? { username: 'You', isUser: true }
+                                : {
+                                    username: selectedBot.name,
+                                    rating: useCustomElo ? customElo : selectedBot.elo,
+                                    avatar: selectedBot.image,
+                                    image: selectedBot.image,
+                                    isBot: true,
+                                    bot: selectedBot,
+                                  },
                             black:
                               playerColor === 'w'
-                                ? { username: selectedBot.name, rating: selectedBot.elo, avatar: selectedBot.avatar }
-                                : { username: 'You', rating: 'Player', avatar: null },
+                                ? {
+                                    username: selectedBot.name,
+                                    rating: useCustomElo ? customElo : selectedBot.elo,
+                                    avatar: selectedBot.image,
+                                    image: selectedBot.image,
+                                    isBot: true,
+                                    bot: selectedBot,
+                                  }
+                                : { username: 'You', isUser: true },
                           })
                         }
                         className="w-full py-2.5 px-3 rounded-sm font-bold text-xs btn-chess-green flex items-center justify-center gap-1.5 cursor-pointer"
@@ -969,7 +1129,7 @@ export default function PlayAI({
                 <button
                   onClick={() => handleGameOver('loss', 'You resigned the game.', 'resignation')}
                   disabled={gameResult !== null}
-                  className="py-1.5 px-2 sm:px-2.5 rounded-sm btn-chess-danger disabled:opacity-40 flex items-center justify-center gap-1.5 cursor-pointer shadow-xs text-xs font-bold"
+                  className="py-1.5 px-2 sm:px-2.5 rounded-sm btn-chess-danger disabled:opacity-40 flex items-center justify-center gap-1.5 cursor-pointer text-xs font-bold"
                   title="Resign the current game"
                 >
                   <Flag className="w-3.5 h-3.5 shrink-0" />
@@ -978,7 +1138,7 @@ export default function PlayAI({
                 <button
                   onClick={() => handleGameOver('draw', 'Draw agreed.', 'draw')}
                   disabled={gameResult !== null}
-                  className="py-1.5 px-2 sm:px-2.5 rounded-sm btn-chess-draw disabled:opacity-40 flex items-center justify-center gap-1.5 cursor-pointer shadow-xs text-xs font-bold"
+                  className="py-1.5 px-2 sm:px-2.5 rounded-sm btn-chess-draw disabled:opacity-40 flex items-center justify-center gap-1.5 cursor-pointer text-xs font-bold"
                   title="Offer a draw"
                 >
                   <Handshake className="w-3.5 h-3.5 shrink-0" />
@@ -986,31 +1146,11 @@ export default function PlayAI({
                 </button>
                 <button
                   onClick={() => setIsFlipped(!isFlipped)}
-                  className="py-1.5 px-2 sm:px-2.5 rounded-sm btn-chess-flip flex items-center justify-center gap-1.5 cursor-pointer shadow-xs text-xs font-bold"
+                  className="py-1.5 px-2 sm:px-2.5 rounded-sm btn-chess-flip flex items-center justify-center gap-1.5 cursor-pointer text-xs font-bold"
                   title="Flip board orientation"
                 >
-                  <RefreshCw className="w-3.5 h-3.5 shrink-0" />
+                  <RotateCcw className="w-3.5 h-3.5 shrink-0" />
                   <span className="truncate">Flip</span>
-                </button>
-              </div>
-
-              {/* Copy FEN / PGN Buttons */}
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={handleCopyFen}
-                  className="py-2 px-3 rounded-sm btn-chess-utility flex items-center justify-center gap-2 text-xs font-semibold cursor-pointer"
-                  title="Copy current position FEN to clipboard"
-                >
-                  {copiedFen ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-theme-muted" />}
-                  <span>{copiedFen ? 'FEN Copied!' : 'Copy FEN'}</span>
-                </button>
-                <button
-                  onClick={handleCopyPgn}
-                  className="py-2 px-3 rounded-sm btn-chess-utility flex items-center justify-center gap-2 text-xs font-semibold cursor-pointer"
-                  title="Copy game PGN to clipboard"
-                >
-                  {copiedPgn ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-theme-muted" />}
-                  <span>{copiedPgn ? 'PGN Copied!' : 'Copy PGN'}</span>
                 </button>
               </div>
 
@@ -1043,11 +1183,6 @@ export default function PlayAI({
                 </div>
               </div>
 
-              {/* Footer Note */}
-              <div className="text-right text-[11px] text-theme-muted pt-2 flex items-center justify-end gap-1 select-none">
-                <span>Built for thinkers</span>
-                <span className="text-theme-accent">♡</span>
-              </div>
             </div>
           )}
 
@@ -1068,7 +1203,35 @@ export default function PlayAI({
 
               {onAnalyzeGame && historyMoves.length > 0 && (
                 <button
-                  onClick={() => onAnalyzeGame(historyMoves)}
+                  onClick={() =>
+                    onAnalyzeGame(historyMoves, null, {
+                      site: 'vs_bot',
+                      isBotMatch: true,
+                      bot: selectedBot,
+                      white:
+                        playerColor === 'w'
+                          ? { username: 'You', isUser: true }
+                          : {
+                              username: selectedBot.name,
+                              rating: useCustomElo ? customElo : selectedBot.elo,
+                              avatar: selectedBot.image,
+                              image: selectedBot.image,
+                              isBot: true,
+                              bot: selectedBot,
+                            },
+                      black:
+                        playerColor === 'w'
+                          ? {
+                              username: selectedBot.name,
+                              rating: useCustomElo ? customElo : selectedBot.elo,
+                              avatar: selectedBot.image,
+                              image: selectedBot.image,
+                              isBot: true,
+                              bot: selectedBot,
+                            }
+                          : { username: 'You', isUser: true },
+                    })
+                  }
                   className="w-full py-2.5 px-3 rounded-sm font-bold text-xs btn-chess-green flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <BarChart2 className="w-4 h-4" />

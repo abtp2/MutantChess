@@ -15,14 +15,15 @@ function MoveAnnotationBadge({ classification }) {
   return (
     <div
       title={`${classification.label || 'Move'}: ${classification.description || ''}`}
-      className="absolute top-0.5 right-0.5 z-30 pointer-events-none select-none flex items-center justify-center animate-badge-pop"
+      className="absolute top-0 right-0 z-30 pointer-events-none select-none flex items-center justify-center animate-badge-pop filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
       style={{
-        width: '32%',
-        height: '32%',
-        maxWidth: '28px',
-        maxHeight: '28px',
-        minWidth: '18px',
-        minHeight: '18px',
+        width: '45%',
+        height: '45%',
+        maxWidth: '38px',
+        maxHeight: '38px',
+        minWidth: '24px',
+        minHeight: '24px',
+        transform: 'translate(15%, -15%)',
       }}
     >
       <ClassificationIcon classification={classification} size="100%" />
@@ -33,6 +34,7 @@ function MoveAnnotationBadge({ classification }) {
 function ChessBoardComponent({
   chess,
   onMove,
+  onPremove,
   isFlipped = false,
   playerColor = 'w',
   themeId = 'stone',
@@ -219,59 +221,72 @@ function ChessBoardComponent({
       if (disabled || !chess) return;
 
       const friendlyColor = playerColor || chess.turn();
+      const isPlayerTurn = chess.turn() === friendlyColor;
 
       if (selectedSquare) {
         if (selectedSquare === square) {
           setSelectedSquare(null);
-          if (premoveQueue && premoveQueue.length > 0) {
-            onCancelPremoves?.();
-          }
           return;
         }
 
-        try {
-          const test = new Chess(chess.fen());
-          const testMove = test.move({ from: selectedSquare, to: square, promotion: 'q' });
-          if (testMove) {
-            const pieceObj = chess.get(selectedSquare);
-            const isPawn = pieceObj && pieceObj.type === 'p';
-            const isPromotion =
-              isPawn &&
-              ((pieceObj.color === 'w' && square[1] === '8') ||
-                (pieceObj.color === 'b' && square[1] === '1'));
+        const targetPiece = chess.get(square);
 
-            if (isPromotion) {
-              setPromotionMove({ from: selectedSquare, to: square });
-              return;
-            }
-
-            if (onMove) {
-              onMove({ from: selectedSquare, to: square, promotion: 'q' });
-            }
-            setSelectedSquare(null);
-            return;
-          }
-        } catch (e) {}
-
-        if (premoveQueue && premoveQueue.length > 0) {
-          onCancelPremoves?.();
-        }
-
-        const clickedPiece = chess.get(square);
-        if (clickedPiece && clickedPiece.color === friendlyColor) {
+        // If clicking another friendly piece, re-select that piece instead
+        if (targetPiece && targetPiece.color === friendlyColor) {
           setSelectedSquare(square);
           return;
         }
 
+        // Live Move (Player's turn)
+        if (isPlayerTurn) {
+          try {
+            const test = new Chess(chess.fen());
+            const testMove = test.move({ from: selectedSquare, to: square, promotion: 'q' });
+            if (testMove) {
+              const pieceObj = chess.get(selectedSquare);
+              const isPawn = pieceObj && pieceObj.type === 'p';
+              const isPromotion =
+                isPawn &&
+                ((pieceObj.color === 'w' && square[1] === '8') ||
+                  (pieceObj.color === 'b' && square[1] === '1'));
+
+              if (isPromotion) {
+                setPromotionMove({ from: selectedSquare, to: square });
+                return;
+              }
+
+              if (onMove) {
+                onMove({ from: selectedSquare, to: square, promotion: 'q' });
+              }
+              setSelectedSquare(null);
+              return;
+            }
+          } catch (e) {}
+
+          setSelectedSquare(null);
+          return;
+        }
+
+        // Premove (Opponent's turn)
+        const pieceObj = chess.get(selectedSquare);
+        if (pieceObj && pieceObj.color === friendlyColor) {
+          const isPawn = pieceObj.type === 'p';
+          const isPromotion =
+            isPawn &&
+            ((pieceObj.color === 'w' && square[1] === '8') ||
+              (pieceObj.color === 'b' && square[1] === '1'));
+
+          if (onPremove) {
+            onPremove({ from: selectedSquare, to: square, promotion: isPromotion ? 'q' : undefined });
+          }
+        }
         setSelectedSquare(null);
         return;
       }
 
+      // First click: select friendly piece
       const piece = chess.get(square);
       if (piece && piece.color === friendlyColor) {
-        if (premoveQueue && premoveQueue.length > 0) {
-          onCancelPremoves?.();
-        }
         setSelectedSquare(square);
       } else {
         if (premoveQueue && premoveQueue.length > 0) {
@@ -279,7 +294,7 @@ function ChessBoardComponent({
         }
       }
     },
-    [disabled, chess, playerColor, selectedSquare, premoveQueue, onCancelPremoves, onMove]
+    [disabled, chess, playerColor, selectedSquare, premoveQueue, onCancelPremoves, onMove, onPremove]
   );
 
   // Drag & Drop Handler
@@ -297,7 +312,6 @@ function ChessBoardComponent({
       }
 
       if (!sourceSquare || !targetSquare || sourceSquare === targetSquare) {
-        if (premoveQueue && premoveQueue.length > 0) onCancelPremoves?.();
         return false;
       }
       if (disabled || !chess) return false;
@@ -305,40 +319,66 @@ function ChessBoardComponent({
       const friendlyColor = playerColor || chess.turn();
       const pieceObj = chess.get(sourceSquare);
       if (!pieceObj || pieceObj.color !== friendlyColor) {
-        if (premoveQueue && premoveQueue.length > 0) onCancelPremoves?.();
         return false;
       }
 
-      try {
-        const isPawn = pieceObj.type === 'p';
-        const isPromotion =
-          isPawn &&
-          ((pieceObj.color === 'w' && targetSquare[1] === '8') ||
-            (pieceObj.color === 'b' && targetSquare[1] === '1'));
+      const isPlayerTurn = chess.turn() === friendlyColor;
 
-        if (isPromotion) {
-          setPromotionMove({ from: sourceSquare, to: targetSquare });
+      // Case A: LIVE MOVE (Player's turn)
+      if (isPlayerTurn) {
+        try {
+          const isPawn = pieceObj.type === 'p';
+          const isPromotion =
+            isPawn &&
+            ((pieceObj.color === 'w' && targetSquare[1] === '8') ||
+              (pieceObj.color === 'b' && targetSquare[1] === '1'));
+
+          if (isPromotion) {
+            setPromotionMove({ from: sourceSquare, to: targetSquare });
+            return true;
+          }
+
+          const test = new Chess(chess.fen());
+          const testMove = test.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
+          if (!testMove) {
+            return false;
+          }
+
+          if (onMove) {
+            const ok = onMove({ from: sourceSquare, to: targetSquare, promotion: 'q' });
+            return ok !== false;
+          }
           return true;
-        }
-
-        const test = new Chess(chess.fen());
-        const testMove = test.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
-        if (!testMove) {
-          if (premoveQueue && premoveQueue.length > 0) onCancelPremoves?.();
+        } catch (e) {
           return false;
         }
+      }
 
-        if (onMove) {
-          const ok = onMove({ from: sourceSquare, to: targetSquare, promotion: 'q' });
-          return ok !== false;
-        }
-        return true;
-      } catch (e) {
-        if (premoveQueue && premoveQueue.length > 0) onCancelPremoves?.();
+      // Case B: PREMOVE (Opponent's turn)
+      const destPiece = chess.get(targetSquare);
+      if (destPiece && destPiece.color === friendlyColor) {
+        // Cannot capture own piece
         return false;
       }
+
+      const isPawn = pieceObj.type === 'p';
+      const isPromotion =
+        isPawn &&
+        ((pieceObj.color === 'w' && targetSquare[1] === '8') ||
+          (pieceObj.color === 'b' && targetSquare[1] === '1'));
+
+      const premoveObj = {
+        from: sourceSquare,
+        to: targetSquare,
+        promotion: isPromotion ? 'q' : undefined,
+      };
+
+      if (onPremove) {
+        onPremove(premoveObj);
+      }
+      return true;
     },
-    [disabled, chess, playerColor, premoveQueue, onCancelPremoves, onMove]
+    [disabled, chess, playerColor, onMove, onPremove]
   );
 
   const handlePromotionSelect = useCallback(
@@ -355,11 +395,15 @@ function ChessBoardComponent({
   const customArrows = useMemo(() => {
     const arrows = [];
     if (arrow && arrow.from && arrow.to) {
-      arrows.push({
-        startSquare: arrow.from,
-        endSquare: arrow.to,
-        color: arrow.color || '#81b64c',
-      });
+      // Defensive safeguard: ensure there is actually a piece on arrow.from matching active turn
+      const piece = chess ? chess.get(arrow.from) : null;
+      if (piece && piece.color === chess.turn()) {
+        arrows.push({
+          startSquare: arrow.from,
+          endSquare: arrow.to,
+          color: arrow.color || '#81b64c',
+        });
+      }
     }
 
     if (premoveQueue && premoveQueue.length > 0) {
@@ -374,9 +418,11 @@ function ChessBoardComponent({
       });
     }
     return arrows;
-  }, [arrow, premoveQueue]);
+  }, [arrow, premoveQueue, chess]);
 
-  // Custom Square Renderer for move annotation badges
+  const hasAnnotations = !!(annotation || annotations);
+
+  // Custom Square Renderer for move annotation badges (only active when annotations present)
   const renderSquare = useCallback(
     ({ piece, square, children }) => {
       let squareAnnotation = null;
@@ -387,20 +433,13 @@ function ChessBoardComponent({
       }
 
       return (
-        <div
-          style={{
-            width: '100%',
-            height: '100%',
-            position: 'relative',
-            ...customSquareStyles[square],
-          }}
-        >
+        <div className="relative w-full h-full">
           {children}
           {squareAnnotation && <MoveAnnotationBadge classification={squareAnnotation} />}
         </div>
       );
     },
-    [annotation, annotations, customSquareStyles]
+    [annotation, annotations]
   );
 
   // Memoize chessboardOptions so react-chessboard does NOT re-initialize on every render
@@ -421,13 +460,13 @@ function ChessBoardComponent({
       allowDragging: !disabled,
       dragActivationDistance: 4,
       draggingPieceGhostStyle: { opacity: 0, visibility: 'hidden' },
-      squareRenderer: renderSquare,
+      squareRenderer: hasAnnotations ? renderSquare : undefined,
       canDragPiece: ({ square }) => {
         if (disabled || !chess) return false;
         const p = chess.get(square);
         if (!p) return false;
         const friendlyColor = playerColor || chess.turn();
-        return p.color === friendlyColor && chess.turn() === friendlyColor;
+        return p.color === friendlyColor;
       },
       onPieceDrop: handlePieceDrop,
       onSquareClick: handleSquareClick,
@@ -444,6 +483,7 @@ function ChessBoardComponent({
     customSquareStyles,
     customArrows,
     disabled,
+    hasAnnotations,
     renderSquare,
     chess,
     playerColor,
@@ -458,6 +498,12 @@ function ChessBoardComponent({
     <div
       ref={containerRef}
       className="relative flex flex-col items-center justify-center w-full select-none"
+      style={{
+        touchAction: 'none',
+        WebkitTouchCallout: 'none',
+        WebkitUserSelect: 'none',
+        userSelect: 'none',
+      }}
       onContextMenu={(e) => {
         e.preventDefault();
         if (onCancelPremoves) onCancelPremoves();
@@ -468,7 +514,7 @@ function ChessBoardComponent({
         {evalBar}
         <div
           className="shrink-0 box-content"
-          style={{ width: boardWidth, height: boardWidth }}
+          style={{ width: boardWidth, height: boardWidth, touchAction: 'none' }}
         >
           <Chessboard options={chessboardOptions} />
         </div>

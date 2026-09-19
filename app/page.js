@@ -7,8 +7,9 @@ import PlayAI from '../components/PlayAI';
 import AnalysisBoard from '../components/AnalysisBoard';
 import PassAndPlay from '../components/PassAndPlay';
 import GameImporter from '../components/GameImporter';
+import OpeningsExplorer from '../components/OpeningsExplorer';
 import ThemeSelector from '../components/ThemeSelector';
-import { Monitor, Users, FileText, BarChart2, X } from 'lucide-react';
+import { Monitor, Users, FileText, BarChart2, BookOpen, X } from 'lucide-react';
 import {
   getSavedBoardTheme,
   getSavedSiteTheme,
@@ -23,6 +24,12 @@ export default function Home() {
   const [siteTheme, setSiteTheme] = useState('stone');
   const [themeModalOpen, setThemeModalOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [playAiOpening, setPlayAiOpening] = useState({
+    fen: null,
+    name: null,
+    moves: [],
+    pgn: '',
+  });
   
   const [analysisPayload, setAnalysisPayload] = useState({
     moves: [],
@@ -65,11 +72,17 @@ export default function Home() {
     setCurrentView('analysis');
   };
 
+  const handlePlayOpening = (fen, name = null, moves = [], pgn = '') => {
+    setPlayAiOpening({ fen, name, moves, pgn });
+    setCurrentView('ai');
+  };
+
   const themeVars = getThemeCssVariables(activeSiteTheme);
 
   const leftNavItems = [
     { id: 'ai', label: 'Play vs Computer', icon: Monitor },
     { id: 'analysis', label: 'Analysis & Review', icon: BarChart2 },
+    { id: 'openings', label: 'Openings', icon: BookOpen },
     { id: '1v1', label: 'Pass & Play', icon: Users },
     { id: 'import', label: 'Import Game', icon: FileText },
   ];
@@ -182,8 +195,12 @@ export default function Home() {
         <main className="flex-1 flex flex-col justify-start w-full py-2 sm:py-4 pb-6 min-w-0">
           {currentView === 'ai' && (
             <PlayAI
+              key={playAiOpening.fen ? `opening_${playAiOpening.fen}_${playAiOpening.moves.length}` : 'default_ai'}
               boardThemeId={boardTheme}
               onAnalyzeGame={handleOpenAnalysisWithGame}
+              initialFen={playAiOpening.fen}
+              initialMoves={playAiOpening.moves}
+              openingName={playAiOpening.name}
             />
           )}
 
@@ -195,6 +212,14 @@ export default function Home() {
               initialGameInfo={analysisPayload.gameInfo}
               boardThemeId={boardTheme}
               onOpenImporter={() => setCurrentView('import')}
+            />
+          )}
+
+          {currentView === 'openings' && (
+            <OpeningsExplorer
+              onAnalyzeOpening={handleOpenAnalysisWithGame}
+              onPlayOpening={handlePlayOpening}
+              boardThemeId={boardTheme}
             />
           )}
 
