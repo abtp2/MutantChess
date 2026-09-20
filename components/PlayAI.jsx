@@ -207,8 +207,12 @@ export default function PlayAI({
   const handlePremove = useCallback(({ from, to, promotion = 'q' }) => {
     if (gameResultRef.current) return;
     const pm = { from, to, promotion };
-    premoveQueueRef.current = [pm];
-    setPremoveQueue([pm]);
+    setPremoveQueue((prev) => {
+      if (prev.length >= 10) return prev;
+      const next = [...prev, pm];
+      premoveQueueRef.current = next;
+      return next;
+    });
   }, []);
 
   // Helper to force active color in FEN
@@ -234,18 +238,25 @@ export default function PlayAI({
     }
 
     try {
-      let fen = setFenTurn(chess.fen(), playerColor);
-      let virtualBoard = new Chess(fen);
+      let virtualBoard = new Chess(setFenTurn(chess.fen(), playerColor));
 
       for (const pm of premoveQueue) {
-        const fenBefore = setFenTurn(virtualBoard.fen(), playerColor);
-        virtualBoard = new Chess(fenBefore);
-        const res = virtualBoard.move({
-          from: pm.from,
-          to: pm.to,
-          promotion: pm.promotion || 'q',
-        });
-        if (!res) break;
+        try {
+          const fenBefore = setFenTurn(virtualBoard.fen(), playerColor);
+          const nextBoard = new Chess(fenBefore);
+          const res = nextBoard.move({
+            from: pm.from,
+            to: pm.to,
+            promotion: pm.promotion || 'q',
+          });
+          if (res) {
+            virtualBoard = nextBoard;
+          } else {
+            break;
+          }
+        } catch (e) {
+          break;
+        }
       }
 
       const finalFen = setFenTurn(virtualBoard.fen(), playerColor);
@@ -547,12 +558,10 @@ export default function PlayAI({
       } else {
         // Illegal premove in this position: cancel all premoves like Chess.com
         handleCancelPremoves();
-        updateEval(activeChess.fen());
         return false;
       }
     } catch (e) {
       handleCancelPremoves();
-      updateEval(activeChess.fen());
       return false;
     }
   };
@@ -696,8 +705,6 @@ export default function PlayAI({
     isBotThinkingRef.current = false;
     setCapturedWhite(capW);
     setCapturedBlack(capB);
-    setEvalScore({ cp: 0, mate: null });
-    updateEval(fresh.fen());
     
     setPlayerColor(color);
     playerColorRef.current = color;
@@ -830,7 +837,8 @@ export default function PlayAI({
           {/* Board without Eval Bar */}
           <div className="w-full flex justify-center">
             <ChessBoard
-              chess={chess}
+              chess={displayChess}
+              isTurn={chess.turn() === playerColor && !isBotThinking && premoveQueue.length === 0}
               onMove={handleBoardMove}
               onPremove={handlePremove}
               playerColor={playerColor}

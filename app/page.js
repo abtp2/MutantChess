@@ -9,6 +9,7 @@ import PassAndPlay from '../components/PassAndPlay';
 import GameImporter from '../components/GameImporter';
 import OpeningsExplorer from '../components/OpeningsExplorer';
 import ThemeSelector from '../components/ThemeSelector';
+import Logo from '../components/Logo';
 import { Monitor, Users, FileText, BarChart2, BookOpen, X } from 'lucide-react';
 import {
   getSavedBoardTheme,
@@ -116,15 +117,14 @@ export default function Home() {
             <div className="space-y-4">
               {/* Header with Brand & Close Button */}
               <div className="flex items-center justify-between pb-3 border-b border-theme-border">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-sm bg-theme-accent flex items-center justify-center">
-                    <svg viewBox="0 0 45 45" className="w-5 h-5 fill-white">
-                      <path d="m 22.5,9 c -2.21,0 -4,1.79 -4,4 0,0.89 0.29,1.71 0.78,2.38 C 17.33,16.5 16,18.59 16,21 c 0,2.03 0.94,3.84 2.41,5.03 C 15.41,27.09 11,31.58 11,39.5 l 23,0 c 0,-7.92 -4.41,-12.41 -7.41,-13.47 C 28.06,24.84 29,23.03 29,21 29,18.59 27.67,16.5 25.72,15.38 26.21,14.71 26.5,13.89 26.5,13 c 0,-2.21 -1.79,-4 -4,-4 z" />
-                    </svg>
-                  </div>
-                  <span className="font-extrabold text-base text-white">
-                    Mutant<span className="text-theme-accent">Chess</span>
-                  </span>
+                <div
+                  onClick={() => {
+                    setCurrentView('ai');
+                    setMobileSidebarOpen(false);
+                  }}
+                  className="cursor-pointer"
+                >
+                  <Logo size="sm" />
                 </div>
 
                 <button

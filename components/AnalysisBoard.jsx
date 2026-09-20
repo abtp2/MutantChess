@@ -1161,29 +1161,19 @@ export default function AnalysisBoard({
                     </div>
                   </div>
 
-                  {/* Accuracy & Estimated Performance Elo Cards */}
+                  {/* Accuracy Cards */}
                   <div className="grid grid-cols-2 gap-2 text-center">
                     <div className="p-2.5 rounded-sm bg-theme-sub border border-theme-border">
                       <div className="text-[11px] font-medium text-theme-muted">White Accuracy</div>
                       <div className="text-xl font-bold font-mono text-white mt-0.5">
                         {reviewData.whiteAccuracy}%
                       </div>
-                      {reviewData.whiteEstimatedElo && (
-                        <div className="text-[11px] font-mono text-theme-accent font-semibold mt-0.5">
-                          ~{reviewData.whiteEstimatedElo} Elo
-                        </div>
-                      )}
                     </div>
                     <div className="p-2.5 rounded-sm bg-theme-sub border border-theme-border">
                       <div className="text-[11px] font-medium text-theme-muted">Black Accuracy</div>
                       <div className="text-xl font-bold font-mono text-white mt-0.5">
                         {reviewData.blackAccuracy}%
                       </div>
-                      {reviewData.blackEstimatedElo && (
-                        <div className="text-[11px] font-mono text-theme-accent font-semibold mt-0.5">
-                          ~{reviewData.blackEstimatedElo} Elo
-                        </div>
-                      )}
                     </div>
                   </div>
 
