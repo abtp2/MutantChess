@@ -27,8 +27,18 @@ import {
   Minus,
   Plus,
   GitBranch,
+  Settings,
+  Sliders,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import {
+  DEFAULT_ANALYSIS_DEPTH,
+  MIN_ANALYSIS_DEPTH,
+  MAX_ANALYSIS_DEPTH,
+  DEPTH_PRESETS,
+  getStoredAnalysisDepth,
+  setStoredAnalysisDepth,
+} from '../lib/settings.js';
 
 import CapturedPieces from './CapturedPieces';
 import ClassificationIcon from './ClassificationIcon';
@@ -131,10 +141,25 @@ export default function AnalysisBoard({
   const [showBestLine, setShowBestLine] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
   const [boardHeight, setBoardHeight] = useState(560);
-  const [activeTab, setActiveTab] = useState('review'); // 'review' | 'moves' | 'graph'
+  const [activeTab, setActiveTab] = useState('review'); // 'review' | 'moves' | 'graph' | 'settings'
   const [copiedFen, setCopiedFen] = useState(false);
   const [copiedPgn, setCopiedPgn] = useState(false);
   const [userBoardWidth, setUserBoardWidth] = useState(null);
+  const [engineDepth, setEngineDepth] = useState(DEFAULT_ANALYSIS_DEPTH);
+
+  useEffect(() => {
+    setEngineDepth(getStoredAnalysisDepth());
+    const onDepthChanged = (e) => {
+      if (e.detail) setEngineDepth(e.detail);
+    };
+    window.addEventListener('analysis_depth_changed', onDepthChanged);
+    return () => window.removeEventListener('analysis_depth_changed', onDepthChanged);
+  }, []);
+
+  const handleDepthChange = (newDepth) => {
+    const clamped = setStoredAnalysisDepth(newDepth);
+    setEngineDepth(clamped);
+  };
 
   useEffect(() => {
     try {
@@ -260,7 +285,7 @@ export default function AnalysisBoard({
     if (!hasReviewEval && !isAnalyzing) {
       stockfishService.evaluatePosition({
         fen: displayedFen,
-        depth: 8,
+        depth: engineDepth,
         onUpdate: (streamed) => {
           if (!active || evalSeqRef.current !== seq || !streamed) return;
           setLiveEval(streamed);
@@ -297,8 +322,8 @@ export default function AnalysisBoard({
                   currentFen,
                   moveUci,
                   evaluation: {
-                    type: res.mate ? 'mate' : 'cp',
-                    value: res.mate ? (res.mate > 0 ? 10000 : -10000) : (res.cp ?? 0),
+                    type: res.mate !== null && res.mate !== undefined ? 'mate' : 'cp',
+                    value: res.mate !== null && res.mate !== undefined ? res.mate : (res.cp ?? 0),
                   },
                   previousEvaluation: {
                     type: prev.evaluations?.[currentStep]?.whiteMate ? 'mate' : 'cp',
@@ -418,7 +443,7 @@ export default function AnalysisBoard({
     return () => {
       active = false;
     };
-  }, [currentStep, fensHistory, reviewData, showBestLine, isMistakeOrMiss, currentClassifiedMove, isAnalyzing]);
+  }, [currentStep, fensHistory, reviewData, showBestLine, isMistakeOrMiss, currentClassifiedMove, isAnalyzing, engineDepth]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -529,10 +554,13 @@ export default function AnalysisBoard({
     setIsAnalyzing(true);
     setAnalysisProgress({ current: 0, total: moves.length + 1 });
 
+    const targetDepth = Math.max(MIN_ANALYSIS_DEPTH, engineDepth || DEFAULT_ANALYSIS_DEPTH);
+    const movetime = Math.max(400, targetDepth * 35);
+
     try {
       const results = await analyzeFullGame(moves, (prog) => {
         setAnalysisProgress(prog);
-      }, { depth: 8, movetime: 150 });
+      }, { depth: targetDepth, movetime });
 
       setReviewData(results);
       if (!isLineModified) {
@@ -555,7 +583,7 @@ export default function AnalysisBoard({
     }
   };
 
-  const currentAnnotation = currentClassifiedMove && !(showBestLine && isMistakeOrMiss)
+  const currentAnnotation = currentClassifiedMove && !(showBestLine && isMistakeOrMiss) && currentClassifiedMove.classification
     ? {
         square: currentClassifiedMove.to,
         classification: currentClassifiedMove.classification,
@@ -955,6 +983,19 @@ export default function AnalysisBoard({
               <TrendingUp className="w-3.5 h-3.5 text-theme-accent" />
               <span>Graph</span>
             </button>
+
+            <button
+              onClick={() => setActiveTab('settings')}
+              title="Engine Depth & Analysis Settings"
+              className={`flex-1 py-1.5 sm:py-2 text-xs font-bold rounded-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer active:scale-95 ${
+                activeTab === 'settings'
+                  ? 'bg-theme-btn text-white shadow-xs'
+                  : 'text-theme-muted hover:text-white'
+              }`}
+            >
+              <Settings className="w-3.5 h-3.5 text-theme-accent" />
+              <span>Engine</span>
+            </button>
           </div>
 
           {/* TAB 1: REVIEW */}
@@ -962,7 +1003,7 @@ export default function AnalysisBoard({
             <div className="space-y-3">
               {/* Review Start / Progress Card */}
               {!reviewData && !isAnalyzing && (
-                <div className="p-4 bg-theme-panel rounded-sm border border-theme-border text-center space-y-2 shadow-xs">
+                <div className="p-4 bg-theme-panel rounded-sm border border-theme-border text-center space-y-3 shadow-xs">
                   <button
                     onClick={handleStartReview}
                     disabled={moves.length === 0}
@@ -971,6 +1012,7 @@ export default function AnalysisBoard({
                     <BarChart2 className="w-4 h-4" />
                     <span>{isLineModified ? 'Review Exploratory Line' : 'Review Game'}</span>
                   </button>
+
                   {isLineModified && (
                     <button
                       onClick={handleRevertToOriginal}
@@ -1020,22 +1062,38 @@ export default function AnalysisBoard({
                   {/* Header Row: Classification Badge + SAN + Score Pill */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <ClassificationIcon
-                        classification={currentClassifiedMove.classification}
-                        size={28}
-                      />
+                      {currentClassifiedMove.classification ? (
+                        <ClassificationIcon
+                          classification={currentClassifiedMove.classification}
+                          size={28}
+                        />
+                      ) : (
+                        <div className="w-7 h-7 rounded-full bg-theme-sub border border-theme-border flex items-center justify-center text-xs text-theme-muted">
+                          <span className="inline-block w-2.5 h-2.5 border-2 border-theme-accent border-t-transparent rounded-full animate-spin" />
+                        </div>
+                      )}
                       <div className="flex items-baseline gap-1.5">
                         <span className="font-mono font-bold text-base text-white">
                           {currentClassifiedMove.san}
                         </span>
-                        <span className="text-xs font-semibold text-theme-sec">
-                          is {currentClassifiedMove.classification.label.toLowerCase()}
-                        </span>
+                        {currentClassifiedMove.classification?.label ? (
+                          <span className="text-xs font-semibold text-theme-sec">
+                            is {currentClassifiedMove.classification.label.toLowerCase()}
+                          </span>
+                        ) : typeof currentClassifiedMove.classification === 'string' ? (
+                          <span className="text-xs font-semibold text-theme-sec">
+                            is {currentClassifiedMove.classification.toLowerCase()}
+                          </span>
+                        ) : (
+                          <span className="text-xs font-semibold text-theme-muted italic">
+                            analyzing...
+                          </span>
+                        )}
                       </div>
                     </div>
 
                     <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-xs bg-theme-btn border border-theme-border text-theme-text">
-                      {currentClassifiedMove.scoreDisplay}
+                      {currentClassifiedMove.scoreDisplay || '...'}
                     </span>
                   </div>
 
@@ -1053,7 +1111,7 @@ export default function AnalysisBoard({
                       </div>
                       {(currentClassifiedMove.bestMovePv || currentClassifiedMove.currEval?.pv) && (
                         <span className="text-[10px] text-theme-muted truncate max-w-[200px]">
-                          {(currentClassifiedMove.bestMovePv || currentClassifiedMove.currEval.pv).split(' ').slice(0, 4).join(' ')}
+                          {(currentClassifiedMove.bestMovePv || currentClassifiedMove.currEval?.pv || '').split(' ').slice(0, 4).join(' ')}
                         </span>
                       )}
                     </div>
@@ -1213,6 +1271,78 @@ export default function AnalysisBoard({
                 <div className="h-24 flex items-center justify-center text-xs text-theme-muted">
                   No review data yet.
                 </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 4: ENGINE SETTINGS */}
+          {activeTab === 'settings' && (
+            <div className="p-3.5 sm:p-4 bg-theme-panel border border-theme-border rounded-sm space-y-4 shadow-xs">
+              {/* Depth Selection Presets */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-theme-sec flex items-center gap-1.5">
+                    <Sliders className="w-3.5 h-3.5 text-theme-accent" />
+                    <span>Search Depth</span>
+                  </label>
+                  <span className="font-mono text-xs font-extrabold px-2 py-0.5 rounded-xs bg-theme-accent text-white">
+                    Depth {engineDepth}
+                  </span>
+                </div>
+
+                {/* Depth Slider */}
+                <div className="space-y-1 pt-1">
+                  <input
+                    type="range"
+                    min={MIN_ANALYSIS_DEPTH}
+                    max={MAX_ANALYSIS_DEPTH}
+                    step={1}
+                    value={engineDepth}
+                    onChange={(e) => handleDepthChange(parseInt(e.target.value, 10))}
+                    className="w-full h-1.5 bg-theme-sub rounded-lg appearance-none cursor-pointer accent-theme-accent"
+                  />
+                  <div className="flex justify-between text-[10px] text-theme-muted font-mono px-0.5">
+                    <span>10 (Min)</span>
+                    <span className="text-theme-accent font-bold">16 (Default)</span>
+                    <span>22 (Max)</span>
+                  </div>
+                </div>
+
+                {/* Preset Cards Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 pt-2">
+                  {DEPTH_PRESETS.map((p) => {
+                    const isSelected = engineDepth === p.depth;
+                    return (
+                      <button
+                        key={p.depth}
+                        onClick={() => handleDepthChange(p.depth)}
+                        className={`p-2 rounded-xs border text-left transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-theme-accent/20 border-theme-accent text-white shadow-xs'
+                            : 'bg-theme-sub hover:bg-theme-btn border-theme-border text-theme-sec hover:text-white'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono font-bold text-xs">{p.depth}</span>
+                          {isSelected && <Check className="w-3 h-3 text-theme-accent" />}
+                        </div>
+                        <div className="text-[10px] font-semibold text-theme-text truncate">{p.name}</div>
+                        <div className="text-[9px] text-theme-muted truncate">{p.desc}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Reset to Default Button */}
+              {engineDepth !== DEFAULT_ANALYSIS_DEPTH && (
+                <button
+                  onClick={() => handleDepthChange(DEFAULT_ANALYSIS_DEPTH)}
+                  className="w-full py-1.5 px-3 rounded-xs text-xs font-semibold bg-theme-sub hover:bg-theme-btn text-theme-sec hover:text-white border border-theme-border transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>Reset to Default (Depth 16)</span>
+                </button>
               )}
             </div>
           )}

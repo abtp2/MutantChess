@@ -51,7 +51,7 @@ export default function MoveHistory({
       >
         <span>{san}</span>
         {classification && (
-          <span className="ml-1 shrink-0" title={classification.label}>
+          <span className="ml-1 shrink-0" title={classification.label || classification.name || (typeof classification === 'string' ? classification : '')}>
             <ClassificationIcon classification={classification} size={15} />
           </span>
         )}

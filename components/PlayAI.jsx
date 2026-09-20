@@ -4,7 +4,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Chess } from 'chess.js';
 import ChessBoard from './ChessBoard';
-import EvalBar from './EvalBar';
 import MoveHistory from './MoveHistory';
 import CapturedPieces from './CapturedPieces';
 import { BOTS, getBotSettingsForElo, getThinkingTimeForElo } from '../lib/bots';
@@ -104,8 +103,6 @@ export default function PlayAI({
   const [copiedFen, setCopiedFen] = useState(false);
   const [copiedPgn, setCopiedPgn] = useState(false);
   const [lastMove, setLastMove] = useState(initialData.lastMove);
-  const [evalScore, setEvalScore] = useState({ cp: 0, mate: null });
-  const evalSeqRef = useRef(0);
   const [capturedWhite, setCapturedWhite] = useState(initialData.capturedWhite);
   const [capturedBlack, setCapturedBlack] = useState(initialData.capturedBlack);
   const [botMessage, setBotMessage] = useState(
@@ -144,9 +141,6 @@ export default function PlayAI({
       if (openingName) {
         setBotMessage(`Practicing ${openingName}. You play as ${data.playerColor === 'w' ? 'White' : 'Black'}!`);
       }
-      updateEval(data.chess.fen());
-    } else {
-      updateEval(chessRef.current ? chessRef.current.fen() : 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
     }
   }, [initialFen, initialMoves, openingName]);
   const [boardHeight, setBoardHeight] = useState(560);
@@ -260,15 +254,6 @@ export default function PlayAI({
       return chess;
     }
   }, [chess, playerColor, isBotThinking, premoveQueue]);
-
-  const memoizedEvalBar = useMemo(() => (
-    <EvalBar
-      cp={evalScore.cp}
-      mate={evalScore.mate}
-      isFlipped={isFlipped}
-      height={boardHeight}
-    />
-  ), [evalScore.cp, evalScore.mate, isFlipped, boardHeight]);
 
   const playMoveAudio = (res) => {
     if (chessRef.current.isGameOver()) {
@@ -518,8 +503,6 @@ export default function PlayAI({
               setTimeout(() => {
                 processNextPremove(nextChess);
               }, 50);
-            } else {
-              updateEval(nextChess.fen());
             }
           }
         }
@@ -530,24 +513,6 @@ export default function PlayAI({
       setIsBotThinking(false);
       isBotThinkingRef.current = false;
     }
-  };
-
-  const updateEval = async (fen) => {
-    const seq = ++evalSeqRef.current;
-    try {
-      const evaluation = await stockfishService.evaluatePosition({
-        fen,
-        depth: 8,
-        onUpdate: (evalRes) => {
-          if (evalSeqRef.current === seq && evalRes) {
-            setEvalScore({ cp: evalRes.cp, mate: evalRes.mate });
-          }
-        },
-      });
-      if (evalSeqRef.current === seq && evaluation) {
-        setEvalScore({ cp: evaluation.cp, mate: evaluation.mate });
-      }
-    } catch (e) {}
   };
 
   // Process the next queued premove in FIFO order
@@ -627,7 +592,6 @@ export default function PlayAI({
       setHistoryMoves((prev) => [...prev, res]);
       setCurrentMoveIndex((prev) => prev + 1);
       playMoveAudio(res);
-      updateEval(next.fen());
 
       if (next.isGameOver()) {
         handleCancelPremoves();
@@ -777,13 +741,11 @@ export default function PlayAI({
     if (index === -1) {
       setChess(new Chess());
       setLastMove(null);
-      updateEval('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
     } else {
       const targetMove = historyMoves[index];
       if (targetMove && targetMove.after) {
         setChess(new Chess(targetMove.after));
         setLastMove({ from: targetMove.from, to: targetMove.to });
-        updateEval(targetMove.after);
       } else {
         const c = new Chess();
         for (let i = 0; i <= index; i++) {
@@ -797,7 +759,6 @@ export default function PlayAI({
         if (historyMoves[index]) {
           setLastMove({ from: historyMoves[index].from, to: historyMoves[index].to });
         }
-        updateEval(c.fen());
       }
     }
   };
@@ -866,10 +827,9 @@ export default function PlayAI({
             </div>
           </div>
 
-          {/* Board with integrated zero-gap Eval Bar */}
+          {/* Board without Eval Bar */}
           <div className="w-full flex justify-center">
             <ChessBoard
-              evalBar={memoizedEvalBar}
               chess={chess}
               onMove={handleBoardMove}
               onPremove={handlePremove}
