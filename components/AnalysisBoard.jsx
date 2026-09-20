@@ -7,7 +7,7 @@ import ChessBoard from './ChessBoard';
 import EvalBar from './EvalBar';
 import MoveHistory from './MoveHistory';
 import AdvantageGraph from './AdvantageGraph';
-import { MOVE_CLASSIFICATIONS, analyzeFullGame, uciToSan } from '../lib/analysisEngine.js';
+import { MOVE_CLASSIFICATIONS, analyzeFullGame, uciToSan, checkBrilliantMove } from '../lib/analysisEngine.js';
 import { stockfishService } from '../lib/stockfishService.js';
 import {
   BarChart2,
@@ -284,8 +284,40 @@ export default function AnalysisBoard({
               let classification = MOVE_CLASSIFICATIONS.good;
               let coachExplanation = 'A solid exploratory move.';
               if (res.bestMove && res.bestMove.startsWith(updatedClassified[currentStep].from + updatedClassified[currentStep].to)) {
-                classification = MOVE_CLASSIFICATIONS.best;
-                coachExplanation = 'The best move according to the engine!';
+                const moveUci = (
+                  (updatedClassified[currentStep].from || '') +
+                  (updatedClassified[currentStep].to || '') +
+                  (updatedClassified[currentStep].promotion || '')
+                ).toLowerCase();
+                const lastFen = fensHistory[currentStep];
+                const currentFen = displayedFen;
+
+                const isBrilliant = checkBrilliantMove({
+                  lastFen,
+                  currentFen,
+                  moveUci,
+                  evaluation: {
+                    type: res.mate ? 'mate' : 'cp',
+                    value: res.mate ? (res.mate > 0 ? 10000 : -10000) : (res.cp ?? 0),
+                  },
+                  previousEvaluation: {
+                    type: prev.evaluations?.[currentStep]?.whiteMate ? 'mate' : 'cp',
+                    value: prev.evaluations?.[currentStep]?.whiteCp ?? prevEval,
+                  },
+                  secondEvaluation: undefined,
+                  isTopMove: true,
+                });
+
+                if (isBrilliant) {
+                  classification = MOVE_CLASSIFICATIONS.brilliant;
+                  coachExplanation = 'Brilliant move! You offered an intentional piece sacrifice that keeps a winning advantage and cracks open the enemy position.';
+                  try {
+                    confetti({ particleCount: 60, spread: 60, origin: { y: 0.6 } });
+                  } catch (e) {}
+                } else {
+                  classification = MOVE_CLASSIFICATIONS.best;
+                  coachExplanation = 'The best move according to the engine!';
+                }
               } else if (evalLoss <= 25) {
                 classification = MOVE_CLASSIFICATIONS.excellent;
                 coachExplanation = 'An excellent move, maintaining the initiative.';

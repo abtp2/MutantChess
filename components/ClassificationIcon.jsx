@@ -212,7 +212,7 @@ function renderSvgIcon(id) {
     case 'excellent':
       return (
         <svg
-          viewBox="0 0 24 24"
+          viewBox="-2.5 -2.5 29 29"
           className="w-full h-full"
           fill="#ffffff"
         >
