@@ -81,7 +81,7 @@ function ChessBoardComponent({
       const clientWidth = containerRef.current.clientWidth;
       if (clientWidth <= 0) return;
 
-      const availWidth = evalBar ? Math.max(220, clientWidth - 24) : clientWidth;
+      const availWidth = evalBar ? Math.max(200, clientWidth - 28) : Math.max(200, clientWidth - 4);
 
       let computed = 560;
       if (customBoardWidth && typeof customBoardWidth === 'number' && customBoardWidth > 0) {
@@ -96,10 +96,10 @@ function ChessBoardComponent({
           const maxAllowed = Math.min(availWidth, heightLimit);
           computed = Math.max(300, Math.min(680, maxAllowed));
         } else {
-          // Mobile & Tablet: maximize full available width
-          const heightLimit = Math.max(260, vh - 120);
+          // Mobile & Tablet: maximize available width while keeping board square within viewport height
+          const heightLimit = Math.max(240, vh - 140);
           const maxAllowed = Math.min(availWidth, heightLimit);
-          computed = Math.max(220, maxAllowed);
+          computed = Math.max(200, maxAllowed);
         }
       }
 
@@ -522,12 +522,12 @@ function ChessBoardComponent({
 
       {/* Promotion Choice Dialog */}
       {promotionMove && (
-        <div className="absolute inset-0 bg-black/75 backdrop-blur-xs flex items-center justify-center z-50 animate-fadeIn">
-          <div className="bg-theme-panel border-2 border-theme-accent rounded-sm p-4 flex flex-col items-center gap-3 shadow-2xl">
+        <div className="absolute inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center z-50 p-2 animate-fadeIn">
+          <div className="bg-theme-panel border-2 border-theme-accent rounded-sm p-3 sm:p-4 flex flex-col items-center gap-2.5 sm:gap-3 shadow-2xl max-w-[95vw]">
             <span className="text-xs font-bold text-theme-text uppercase tracking-wider">
               Choose Promotion Piece
             </span>
-            <div className="flex gap-2.5">
+            <div className="flex gap-1.5 sm:gap-2.5">
               {[
                 { id: 'q', label: 'Queen' },
                 { id: 'r', label: 'Rook' },
@@ -537,12 +537,12 @@ function ChessBoardComponent({
                 <button
                   key={p.id}
                   onClick={() => handlePromotionSelect(p.id)}
-                  className="w-16 h-20 bg-theme-btn hover:bg-theme-btnHover text-white font-bold rounded-sm border border-theme-border flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-105 group cursor-pointer"
+                  className="w-14 sm:w-16 h-18 sm:h-20 bg-theme-btn hover:bg-theme-btnHover text-white font-bold rounded-sm border border-theme-border flex flex-col items-center justify-center gap-1 sm:gap-1.5 transition-all active:scale-95 group cursor-pointer"
                 >
-                  <div className="w-9 h-9 flex items-center justify-center">
-                    <ChessPiece type={p.id} color={promotionColor} className="w-8 h-8" />
+                  <div className="w-8 sm:w-9 h-8 sm:h-9 flex items-center justify-center">
+                    <ChessPiece type={p.id} color={promotionColor} className="w-7 sm:w-8 h-7 sm:h-8" />
                   </div>
-                  <span className="text-[11px] font-semibold text-theme-sec group-hover:text-white">
+                  <span className="text-[10px] sm:text-[11px] font-semibold text-theme-sec group-hover:text-white">
                     {p.label}
                   </span>
                 </button>

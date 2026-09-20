@@ -795,46 +795,49 @@ export default function PlayAI({
           
           {/* Top Opponent (Bot) Card */}
           <div 
-            className="w-full mb-2 px-3 sm:px-4 py-2 bg-theme-panel rounded-sm border border-theme-border flex items-center justify-between transition-all"
+            className="w-full mb-1.5 sm:mb-2 px-2.5 sm:px-4 py-1.5 sm:py-2 bg-theme-panel rounded-sm border border-theme-border flex items-center justify-between transition-all"
             style={{ width: '100%', maxWidth: boardHeight ? `${boardHeight + 24}px` : '100%' }}
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <div
                 onClick={() => setActiveTab('settings')}
-                className="cursor-pointer hover:scale-105 transition-transform"
+                className="cursor-pointer hover:scale-105 transition-transform shrink-0"
                 title="Change Opponent in Settings"
               >
-                <BotAvatar bot={selectedBot} size="md" />
+                <BotAvatar bot={selectedBot} size="sm" className="sm:hidden" />
+                <BotAvatar bot={selectedBot} size="md" className="hidden sm:block" />
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-sm text-theme-text">
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <span className="font-bold text-xs sm:text-sm text-theme-text truncate max-w-[110px] sm:max-w-[200px]">
                     {useCustomElo ? 'Custom Bot' : selectedBot.name}
                   </span>
-                  <span className="text-xs font-mono font-bold text-theme-muted">
+                  <span className="text-[11px] sm:text-xs font-mono font-bold text-theme-muted shrink-0">
                     ({useCustomElo ? customElo : selectedBot.elo})
                   </span>
                 </div>
-                <CapturedPieces
-                  whiteCaptured={capturedWhite}
-                  blackCaptured={capturedBlack}
-                  playerColor={playerColor === 'w' ? 'b' : 'w'}
-                />
+                <div className="scale-90 sm:scale-100 origin-left">
+                  <CapturedPieces
+                    whiteCaptured={capturedWhite}
+                    blackCaptured={capturedBlack}
+                    playerColor={playerColor === 'w' ? 'b' : 'w'}
+                  />
+                </div>
               </div>
             </div>
 
             {/* Clock */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               {isBotThinking && (
-                <div className="text-[11px] font-medium text-theme-accent flex items-center gap-1 animate-pulse">
-                  <Bot className="w-3.5 h-3.5" />
+                <div className="text-[10px] sm:text-[11px] font-medium text-theme-accent flex items-center gap-1 animate-pulse">
+                  <Bot className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                   <span className="hidden sm:inline">Thinking...</span>
                 </div>
               )}
               <div
-                className={`font-mono text-base sm:text-lg font-bold px-4 py-1.5 rounded-sm border transition-colors ${
+                className={`font-mono text-sm sm:text-lg font-bold px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-sm border transition-colors ${
                   isTimerStarted && !isPlayerTurn && !gameResult
-                    ? 'bg-theme-accent text-white border-theme-accent'
+                    ? 'bg-theme-accent text-white border-theme-accent shadow-xs'
                     : 'bg-theme-sidebar text-theme-sec border-theme-border'
                 }`}
               >
@@ -846,7 +849,7 @@ export default function PlayAI({
           {/* Board with integrated zero-gap Eval Bar */}
           <div className="w-full flex justify-center">
             <ChessBoard
-              evalBar={memoizedEvalBar}
+              evalBar={null}
               chess={chess}
               onMove={handleBoardMove}
               onPremove={handlePremove}
@@ -864,30 +867,32 @@ export default function PlayAI({
 
           {/* Bottom Player (You) Card */}
           <div 
-            className="w-full mt-2 px-3 sm:px-4 py-2 bg-theme-panel rounded-sm border border-theme-border flex items-center justify-between transition-all"
+            className="w-full mt-1.5 sm:mt-2 px-2.5 sm:px-4 py-1.5 sm:py-2 bg-theme-panel rounded-sm border border-theme-border flex items-center justify-between transition-all"
             style={{ width: '100%', maxWidth: boardHeight ? `${boardHeight + 24}px` : '100%' }}
           >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-sm bg-theme-sub border border-theme-border shrink-0 flex items-center justify-center text-theme-sec">
-                <User className="w-5 h-5" />
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-sm bg-theme-sub border border-theme-border shrink-0 flex items-center justify-center text-theme-sec">
+                <User className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-sm text-theme-text">You</span>
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <span className="font-bold text-xs sm:text-sm text-theme-text">You</span>
                 </div>
-                <CapturedPieces
-                  whiteCaptured={capturedWhite}
-                  blackCaptured={capturedBlack}
-                  playerColor={playerColor}
-                />
+                <div className="scale-90 sm:scale-100 origin-left">
+                  <CapturedPieces
+                    whiteCaptured={capturedWhite}
+                    blackCaptured={capturedBlack}
+                    playerColor={playerColor}
+                  />
+                </div>
               </div>
             </div>
 
             {/* Player Clock */}
             <div
-              className={`font-mono text-base sm:text-lg font-bold px-4 py-1.5 rounded-sm border transition-colors ${
+              className={`font-mono text-sm sm:text-lg font-bold px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-sm border transition-colors ${
                 isTimerStarted && isPlayerTurn && !gameResult
-                  ? 'bg-theme-accent text-white border-theme-accent'
+                  ? 'bg-theme-accent text-white border-theme-accent shadow-xs'
                   : 'bg-theme-sidebar text-theme-sec border-theme-border'
               }`}
             >
@@ -897,25 +902,25 @@ export default function PlayAI({
 
           {/* Board Controls Bar: Move indicator, Flip Board, and Board Size Controls */}
           <div 
-            className="w-full mt-2 px-3 sm:px-4 py-2 bg-theme-panel rounded-sm border border-theme-border flex items-center justify-between text-xs font-mono shadow-xs transition-all"
+            className="w-full mt-1.5 sm:mt-2 px-2.5 sm:px-4 py-1.5 sm:py-2 bg-theme-panel rounded-sm border border-theme-border flex items-center justify-between text-xs font-mono shadow-xs transition-all"
             style={{ width: '100%', maxWidth: boardHeight ? `${boardHeight + 24}px` : '100%' }}
           >
             {/* Left: Flip Board & Copy Tools */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <button
                 onClick={() => setIsFlipped(!isFlipped)}
                 title="Flip board view"
-                className="px-2.5 py-1 rounded-xs bg-theme-sub hover:bg-theme-btn text-theme-sec hover:text-white border border-theme-border hover:border-theme-borderLight transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-sans font-semibold"
+                className="px-2 sm:px-2.5 py-1 rounded-xs bg-theme-sub hover:bg-theme-btn text-theme-sec hover:text-white border border-theme-border hover:border-theme-borderLight transition-colors cursor-pointer flex items-center gap-1 sm:gap-1.5 text-xs font-sans font-semibold active:scale-95"
               >
                 <RefreshCw className="w-3.5 h-3.5 text-theme-sec" />
                 <span>Flip</span>
               </button>
 
-              <div className="flex items-center gap-1 border-l border-theme-border pl-2">
+              <div className="flex items-center gap-1 border-l border-theme-border pl-1.5 sm:pl-2">
                 <button
                   onClick={handleCopyFen}
                   title="Copy current position FEN"
-                  className="px-2 py-1 rounded-xs bg-theme-sub hover:bg-theme-btn text-theme-muted hover:text-white border border-theme-border transition-colors cursor-pointer flex items-center gap-1 text-[11px] font-sans"
+                  className="px-2 py-1 rounded-xs bg-theme-sub hover:bg-theme-btn text-theme-muted hover:text-white border border-theme-border transition-colors cursor-pointer flex items-center gap-1 text-[11px] font-sans active:scale-95"
                 >
                   {copiedFen ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                   <span>{copiedFen ? 'Copied' : 'FEN'}</span>
@@ -923,7 +928,7 @@ export default function PlayAI({
                 <button
                   onClick={handleCopyPgn}
                   title="Copy game PGN"
-                  className="px-2 py-1 rounded-xs bg-theme-sub hover:bg-theme-btn text-theme-muted hover:text-white border border-theme-border transition-colors cursor-pointer flex items-center gap-1 text-[11px] font-sans"
+                  className="px-2 py-1 rounded-xs bg-theme-sub hover:bg-theme-btn text-theme-muted hover:text-white border border-theme-border transition-colors cursor-pointer flex items-center gap-1 text-[11px] font-sans active:scale-95"
                 >
                   {copiedPgn ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                   <span>{copiedPgn ? 'Copied' : 'PGN'}</span>
@@ -931,9 +936,9 @@ export default function PlayAI({
               </div>
             </div>
 
-            {/* Right: Board Size Controls (- Auto / 400px +) */}
-            <div className="flex items-center gap-1 bg-theme-sub px-2 py-0.5 rounded-xs border border-theme-border">
-              <span className="text-[11px] font-sans text-theme-muted font-semibold mr-0.5 hidden sm:inline">Size:</span>
+            {/* Right: Board Size Controls (- Auto / 400px +) - hidden on mobile screens */}
+            <div className="hidden sm:flex items-center gap-1 bg-theme-sub px-2 py-0.5 rounded-xs border border-theme-border">
+              <span className="text-[11px] font-sans text-theme-muted font-semibold mr-0.5">Size:</span>
               <button
                 onClick={() => handleAdjustBoardWidth(-30)}
                 title="Decrease board size"
@@ -966,40 +971,31 @@ export default function PlayAI({
         {/* Right Column: Sidebar with Game / Moves / Settings Tabs */}
         <div className="w-full lg:w-[360px] xl:w-[390px] shrink-0 flex flex-col gap-3">
           
-          {/* Top Tabs */}
-          <div className="flex border-b border-theme-border text-sm font-semibold">
+          {/* Top Tabs: App Segmented Bar */}
+          <div className="flex bg-theme-panel border border-theme-border rounded-sm p-1 gap-1 text-xs font-semibold">
             <button
               onClick={() => setActiveTab('game')}
-              className={`flex-1 pb-3 text-center transition-colors relative cursor-pointer ${
-                activeTab === 'game' ? 'text-white font-bold' : 'text-theme-muted hover:text-white'
+              className={`flex-1 py-1.5 sm:py-2 text-center rounded-xs transition-all cursor-pointer ${
+                activeTab === 'game' ? 'bg-theme-btn text-white font-bold shadow-xs' : 'text-theme-muted hover:text-white'
               }`}
             >
               Game
-              {activeTab === 'game' && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-theme-accent" />
-              )}
             </button>
             <button
               onClick={() => setActiveTab('moves')}
-              className={`flex-1 pb-3 text-center transition-colors relative cursor-pointer ${
-                activeTab === 'moves' ? 'text-white font-bold' : 'text-theme-muted hover:text-white'
+              className={`flex-1 py-1.5 sm:py-2 text-center rounded-xs transition-all cursor-pointer ${
+                activeTab === 'moves' ? 'bg-theme-btn text-white font-bold shadow-xs' : 'text-theme-muted hover:text-white'
               }`}
             >
               Moves {historyMoves.length > 0 ? `(${Math.ceil(historyMoves.length / 2)})` : ''}
-              {activeTab === 'moves' && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-theme-accent" />
-              )}
             </button>
             <button
               onClick={() => setActiveTab('settings')}
-              className={`flex-1 pb-3 text-center transition-colors relative cursor-pointer ${
-                activeTab === 'settings' ? 'text-white font-bold' : 'text-theme-muted hover:text-white'
+              className={`flex-1 py-1.5 sm:py-2 text-center rounded-xs transition-all cursor-pointer ${
+                activeTab === 'settings' ? 'bg-theme-btn text-white font-bold shadow-xs' : 'text-theme-muted hover:text-white'
               }`}
             >
               Settings
-              {activeTab === 'settings' && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-theme-accent" />
-              )}
             </button>
           </div>
 
@@ -1124,12 +1120,12 @@ export default function PlayAI({
                 <span>New Game</span>
               </button>
 
-              {/* 3-Column Control Grid: Resign, Draw, Flip (Small-Medium size, current UI theme color) */}
+              {/* 3-Column Control Grid: Resign, Draw, Flip */}
               <div className="grid grid-cols-3 gap-2">
                 <button
                   onClick={() => handleGameOver('loss', 'You resigned the game.', 'resignation')}
                   disabled={gameResult !== null}
-                  className="py-1.5 px-2 sm:px-2.5 rounded-sm btn-chess-danger disabled:opacity-40 flex items-center justify-center gap-1.5 cursor-pointer text-xs font-bold"
+                  className="py-2.5 sm:py-2 px-2 sm:px-2.5 rounded-sm btn-chess-danger disabled:opacity-40 flex items-center justify-center gap-1.5 cursor-pointer text-xs font-bold active:scale-95"
                   title="Resign the current game"
                 >
                   <Flag className="w-3.5 h-3.5 shrink-0" />
@@ -1138,7 +1134,7 @@ export default function PlayAI({
                 <button
                   onClick={() => handleGameOver('draw', 'Draw agreed.', 'draw')}
                   disabled={gameResult !== null}
-                  className="py-1.5 px-2 sm:px-2.5 rounded-sm btn-chess-draw disabled:opacity-40 flex items-center justify-center gap-1.5 cursor-pointer text-xs font-bold"
+                  className="py-2.5 sm:py-2 px-2 sm:px-2.5 rounded-sm btn-chess-draw disabled:opacity-40 flex items-center justify-center gap-1.5 cursor-pointer text-xs font-bold active:scale-95"
                   title="Offer a draw"
                 >
                   <Handshake className="w-3.5 h-3.5 shrink-0" />
@@ -1146,7 +1142,7 @@ export default function PlayAI({
                 </button>
                 <button
                   onClick={() => setIsFlipped(!isFlipped)}
-                  className="py-1.5 px-2 sm:px-2.5 rounded-sm btn-chess-flip flex items-center justify-center gap-1.5 cursor-pointer text-xs font-bold"
+                  className="py-2.5 sm:py-2 px-2 sm:px-2.5 rounded-sm btn-chess-flip flex items-center justify-center gap-1.5 cursor-pointer text-xs font-bold active:scale-95"
                   title="Flip board orientation"
                 >
                   <RotateCcw className="w-3.5 h-3.5 shrink-0" />
@@ -1160,7 +1156,7 @@ export default function PlayAI({
                 <div className="flex bg-theme-sidebar p-1 rounded-sm border border-theme-border gap-1">
                   <button
                     onClick={() => { setPlayerColor('w'); startNewGame('w', selectedBot); }}
-                    className={`px-4 py-1.5 rounded-xs text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    className={`px-4 py-1.5 rounded-xs text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 ${
                       playerColor === 'w'
                         ? 'bg-white text-gray-950 shadow-xs'
                         : 'text-theme-muted hover:text-white hover:bg-theme-panel'
@@ -1171,7 +1167,7 @@ export default function PlayAI({
                   </button>
                   <button
                     onClick={() => { setPlayerColor('b'); startNewGame('b', selectedBot); }}
-                    className={`px-4 py-1.5 rounded-xs text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    className={`px-4 py-1.5 rounded-xs text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 ${
                       playerColor === 'b'
                         ? 'bg-[#181614] text-white border border-[#4a4742] shadow-xs'
                         : 'text-theme-muted hover:text-white hover:bg-theme-panel'
@@ -1189,7 +1185,7 @@ export default function PlayAI({
           {/* TAB 2: MOVES */}
           {activeTab === 'moves' && (
             <div className="flex flex-col gap-3 animate-fadeIn">
-              <div className="h-[360px]">
+              <div className="h-[260px] sm:h-[360px]">
                 <MoveHistory
                   moves={historyMoves}
                   currentMoveIndex={currentMoveIndex}

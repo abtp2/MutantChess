@@ -497,25 +497,28 @@ export default function AnalysisBoard({
           
           {/* Top Player Card */}
           <div 
-            className="w-full mb-2 px-3.5 py-2 bg-theme-panel rounded-sm border border-theme-border flex items-center justify-between shadow-xs transition-all"
+            className="w-full mb-1.5 sm:mb-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-theme-panel rounded-sm border border-theme-border flex items-center justify-between shadow-xs transition-all"
             style={{ width: '100%', maxWidth: boardHeight ? `${boardHeight + 24}px` : '100%' }}
           >
-            <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               {topPlayer.isBot ? (
-                <BotAvatar bot={topPlayer.bot || topPlayer.avatar} size="md" className="shrink-0" />
+                <>
+                  <BotAvatar bot={topPlayer.bot || topPlayer.avatar} size="sm" className="sm:hidden shrink-0" />
+                  <BotAvatar bot={topPlayer.bot || topPlayer.avatar} size="md" className="hidden sm:block shrink-0" />
+                </>
               ) : topPlayer.showAvatar && topPlayer.avatar ? (
                 <img
                   src={topPlayer.avatar}
                   alt={topPlayer.name}
-                  className="w-10 h-10 rounded-sm border border-theme-border object-cover shrink-0"
+                  className="w-8 h-8 sm:w-10 sm:h-10 rounded-sm border border-theme-border object-cover shrink-0"
                 />
               ) : topPlayer.isUser ? (
-                <div className="w-10 h-10 rounded-sm bg-theme-sub border border-theme-border flex items-center justify-center font-bold text-sm shrink-0 text-theme-accent">
-                  <User className="w-5 h-5" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-sm bg-theme-sub border border-theme-border flex items-center justify-center font-bold text-sm shrink-0 text-theme-accent">
+                  <User className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
               ) : (
                 <div
-                  className={`w-10 h-10 rounded-sm flex items-center justify-center font-bold text-sm shrink-0 ${
+                  className={`w-8 h-8 sm:w-10 sm:h-10 rounded-sm flex items-center justify-center font-bold text-xs sm:text-sm shrink-0 ${
                     topPlayer.color === 'w'
                       ? 'bg-white text-gray-900 border border-gray-300'
                       : 'bg-theme-btn text-white border border-theme-border'
@@ -525,26 +528,28 @@ export default function AnalysisBoard({
                 </div>
               )}
               <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-bold text-sm text-theme-text truncate max-w-[150px] sm:max-w-[220px]">
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                  <span className="font-bold text-xs sm:text-sm text-theme-text truncate max-w-[120px] sm:max-w-[220px]">
                     {topPlayer.name}
                   </span>
                   {topPlayer.isBot && (
-                    <span className="text-[10px] font-black uppercase tracking-wider bg-theme-btn border border-theme-border px-1.5 py-0.2 rounded-xs text-theme-sec">
+                    <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-theme-btn border border-theme-border px-1.5 py-0.2 rounded-xs text-theme-sec">
                       BOT
                     </span>
                   )}
                   {topPlayer.showRating && topPlayer.rating && (
-                    <span className="text-xs font-mono font-medium text-theme-muted">
+                    <span className="text-[11px] sm:text-xs font-mono font-medium text-theme-muted">
                       ({topPlayer.rating})
                     </span>
                   )}
                 </div>
-                <CapturedPieces
-                  whiteCaptured={capturedPieces.capturedByWhite}
-                  blackCaptured={capturedPieces.capturedByBlack}
-                  playerColor={topPlayer.color}
-                />
+                <div className="scale-90 sm:scale-100 origin-left">
+                  <CapturedPieces
+                    whiteCaptured={capturedPieces.capturedByWhite}
+                    blackCaptured={capturedPieces.capturedByBlack}
+                    playerColor={topPlayer.color}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -583,25 +588,28 @@ export default function AnalysisBoard({
 
           {/* Bottom Player Card */}
           <div 
-            className="w-full mt-2 px-3.5 py-2 bg-theme-panel rounded-sm border border-theme-border flex items-center justify-between shadow-xs transition-all"
+            className="w-full mt-1.5 sm:mt-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-theme-panel rounded-sm border border-theme-border flex items-center justify-between shadow-xs transition-all"
             style={{ width: '100%', maxWidth: boardHeight ? `${boardHeight + 24}px` : '100%' }}
           >
-            <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               {bottomPlayer.isBot ? (
-                <BotAvatar bot={bottomPlayer.bot || bottomPlayer.avatar} size="md" className="shrink-0" />
+                <>
+                  <BotAvatar bot={bottomPlayer.bot || bottomPlayer.avatar} size="sm" className="sm:hidden shrink-0" />
+                  <BotAvatar bot={bottomPlayer.bot || bottomPlayer.avatar} size="md" className="hidden sm:block shrink-0" />
+                </>
               ) : bottomPlayer.showAvatar && bottomPlayer.avatar ? (
                 <img
                   src={bottomPlayer.avatar}
                   alt={bottomPlayer.name}
-                  className="w-10 h-10 rounded-sm border border-theme-border object-cover shrink-0"
+                  className="w-8 h-8 sm:w-10 sm:h-10 rounded-sm border border-theme-border object-cover shrink-0"
                 />
               ) : bottomPlayer.isUser ? (
-                <div className="w-10 h-10 rounded-sm bg-theme-sub border border-theme-border flex items-center justify-center font-bold text-sm shrink-0 text-theme-accent">
-                  <User className="w-5 h-5" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-sm bg-theme-sub border border-theme-border flex items-center justify-center font-bold text-sm shrink-0 text-theme-accent">
+                  <User className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
               ) : (
                 <div
-                  className={`w-10 h-10 rounded-sm flex items-center justify-center font-bold text-sm shrink-0 ${
+                  className={`w-8 h-8 sm:w-10 sm:h-10 rounded-sm flex items-center justify-center font-bold text-xs sm:text-sm shrink-0 ${
                     bottomPlayer.color === 'w'
                       ? 'bg-white text-gray-900 border border-gray-300'
                       : 'bg-theme-btn text-white border border-theme-border'
@@ -611,51 +619,53 @@ export default function AnalysisBoard({
                 </div>
               )}
               <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-bold text-sm text-theme-text truncate max-w-[150px] sm:max-w-[220px]">
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                  <span className="font-bold text-xs sm:text-sm text-theme-text truncate max-w-[120px] sm:max-w-[220px]">
                     {bottomPlayer.name}
                   </span>
                   {bottomPlayer.isBot && (
-                    <span className="text-[10px] font-black uppercase tracking-wider bg-theme-btn border border-theme-border px-1.5 py-0.2 rounded-xs text-theme-sec">
+                    <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-theme-btn border border-theme-border px-1.5 py-0.2 rounded-xs text-theme-sec">
                       BOT
                     </span>
                   )}
                   {bottomPlayer.showRating && bottomPlayer.rating && (
-                    <span className="text-xs font-mono font-medium text-theme-muted">
+                    <span className="text-[11px] sm:text-xs font-mono font-medium text-theme-muted">
                       ({bottomPlayer.rating})
                     </span>
                   )}
                 </div>
-                <CapturedPieces
-                  whiteCaptured={capturedPieces.capturedByWhite}
-                  blackCaptured={capturedPieces.capturedByBlack}
-                  playerColor={bottomPlayer.color}
-                />
+                <div className="scale-90 sm:scale-100 origin-left">
+                  <CapturedPieces
+                    whiteCaptured={capturedPieces.capturedByWhite}
+                    blackCaptured={capturedPieces.capturedByBlack}
+                    playerColor={bottomPlayer.color}
+                  />
+                </div>
               </div>
             </div>
           </div>
 
           {/* Board Controls Bar: Move indicator, Flip Board, and Board Size Controls */}
           <div 
-            className="w-full mt-2 px-3 sm:px-4 py-2 bg-theme-panel rounded-sm border border-theme-border flex items-center justify-between text-xs font-mono shadow-xs transition-all"
+            className="w-full mt-1.5 sm:mt-2 px-2.5 sm:px-4 py-1.5 sm:py-2 bg-theme-panel rounded-sm border border-theme-border flex items-center justify-between text-xs font-mono shadow-xs transition-all"
             style={{ width: '100%', maxWidth: boardHeight ? `${boardHeight + 24}px` : '100%' }}
           >
             {/* Left: Flip Board & Copy Tools */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <button
                 onClick={() => setIsFlipped(!isFlipped)}
                 title="Flip board view"
-                className="px-2.5 py-1 rounded-xs bg-theme-sub hover:bg-theme-btn text-theme-sec hover:text-white border border-theme-border hover:border-theme-borderLight transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-sans font-semibold"
+                className="px-2 sm:px-2.5 py-1 rounded-xs bg-theme-sub hover:bg-theme-btn text-theme-sec hover:text-white border border-theme-border hover:border-theme-borderLight transition-colors cursor-pointer flex items-center gap-1 sm:gap-1.5 text-xs font-sans font-semibold active:scale-95"
               >
                 <RefreshCw className="w-3.5 h-3.5 text-theme-sec" />
                 <span>Flip</span>
               </button>
 
-              <div className="flex items-center gap-1 border-l border-theme-border pl-2">
+              <div className="flex items-center gap-1 border-l border-theme-border pl-1.5 sm:pl-2">
                 <button
                   onClick={handleCopyFen}
                   title="Copy current position FEN"
-                  className="px-2 py-1 rounded-xs bg-theme-sub hover:bg-theme-btn text-theme-muted hover:text-white border border-theme-border transition-colors cursor-pointer flex items-center gap-1 text-[11px] font-sans"
+                  className="px-2 py-1 rounded-xs bg-theme-sub hover:bg-theme-btn text-theme-muted hover:text-white border border-theme-border transition-colors cursor-pointer flex items-center gap-1 text-[11px] font-sans active:scale-95"
                 >
                   {copiedFen ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                   <span>{copiedFen ? 'Copied' : 'FEN'}</span>
@@ -663,7 +673,7 @@ export default function AnalysisBoard({
                 <button
                   onClick={handleCopyPgn}
                   title="Copy game PGN"
-                  className="px-2 py-1 rounded-xs bg-theme-sub hover:bg-theme-btn text-theme-muted hover:text-white border border-theme-border transition-colors cursor-pointer flex items-center gap-1 text-[11px] font-sans"
+                  className="px-2 py-1 rounded-xs bg-theme-sub hover:bg-theme-btn text-theme-muted hover:text-white border border-theme-border transition-colors cursor-pointer flex items-center gap-1 text-[11px] font-sans active:scale-95"
                 >
                   {copiedPgn ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                   <span>{copiedPgn ? 'Copied' : 'PGN'}</span>
@@ -671,9 +681,9 @@ export default function AnalysisBoard({
               </div>
             </div>
 
-            {/* Right: Board Size Controls (- Auto / 400px +) */}
-            <div className="flex items-center gap-1 bg-theme-sub px-2 py-0.5 rounded-xs border border-theme-border">
-              <span className="text-[11px] font-sans text-theme-muted font-semibold mr-0.5 hidden sm:inline">Size:</span>
+            {/* Right: Board Size Controls (- Auto / 400px +) - hidden on mobile screens */}
+            <div className="hidden sm:flex items-center gap-1 bg-theme-sub px-2 py-0.5 rounded-xs border border-theme-border">
+              <span className="text-[11px] font-sans text-theme-muted font-semibold mr-0.5">Size:</span>
               <button
                 onClick={() => handleAdjustBoardWidth(-30)}
                 title="Decrease board size"
@@ -706,11 +716,11 @@ export default function AnalysisBoard({
         {/* Right Column: Review Sidebar */}
         <div className="w-full lg:w-[360px] xl:w-[390px] shrink-0 flex flex-col gap-3">
           
-          {/* Tabs Navigation (ChessDream style) */}
+          {/* Tabs Navigation */}
           <div className="flex bg-theme-panel border border-theme-border rounded-sm p-1 gap-1">
             <button
               onClick={() => setActiveTab('review')}
-              className={`flex-1 py-1.5 text-xs font-bold rounded-sm flex items-center justify-center gap-1.5 transition-colors ${
+              className={`flex-1 py-1.5 sm:py-2 text-xs font-bold rounded-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer active:scale-95 ${
                 activeTab === 'review'
                   ? 'bg-theme-btn text-white shadow-xs'
                   : 'text-theme-muted hover:text-white'
@@ -722,7 +732,7 @@ export default function AnalysisBoard({
 
             <button
               onClick={() => setActiveTab('moves')}
-              className={`flex-1 py-1.5 text-xs font-bold rounded-sm flex items-center justify-center gap-1.5 transition-colors ${
+              className={`flex-1 py-1.5 sm:py-2 text-xs font-bold rounded-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer active:scale-95 ${
                 activeTab === 'moves'
                   ? 'bg-theme-btn text-white shadow-xs'
                   : 'text-theme-muted hover:text-white'
@@ -734,7 +744,7 @@ export default function AnalysisBoard({
 
             <button
               onClick={() => setActiveTab('graph')}
-              className={`flex-1 py-1.5 text-xs font-bold rounded-sm flex items-center justify-center gap-1.5 transition-colors ${
+              className={`flex-1 py-1.5 sm:py-2 text-xs font-bold rounded-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer active:scale-95 ${
                 activeTab === 'graph'
                   ? 'bg-theme-btn text-white shadow-xs'
                   : 'text-theme-muted hover:text-white'
@@ -852,7 +862,7 @@ export default function AnalysisBoard({
                   <div className="grid grid-cols-3 gap-2 pt-1 border-t border-theme-border">
                     <button
                       onClick={handleRetryMove}
-                      className="py-1.5 px-2 rounded-sm text-xs font-semibold btn-chess-secondary flex items-center justify-center gap-1"
+                      className="py-2 sm:py-1.5 px-2 rounded-sm text-xs font-semibold btn-chess-secondary flex items-center justify-center gap-1 active:scale-95 cursor-pointer"
                     >
                       <Repeat className="w-3.5 h-3.5" />
                       <span>Retry</span>
@@ -860,7 +870,7 @@ export default function AnalysisBoard({
 
                     <button
                       onClick={handleToggleBestLine}
-                      className={`py-1.5 px-2 rounded-sm text-xs font-semibold flex items-center justify-center gap-1 border transition-colors ${
+                      className={`py-2 sm:py-1.5 px-2 rounded-sm text-xs font-semibold flex items-center justify-center gap-1 border transition-colors active:scale-95 cursor-pointer ${
                         showBestLine
                           ? 'bg-theme-accent text-white border-theme-accent'
                           : 'btn-chess-secondary'
@@ -873,7 +883,7 @@ export default function AnalysisBoard({
                     <button
                       onClick={() => goToStep(Math.min(moves.length - 1, currentStep + 1))}
                       disabled={currentStep >= moves.length - 1}
-                      className="py-1.5 px-2 rounded-sm text-xs font-bold btn-chess-green flex items-center justify-center gap-1 disabled:opacity-40"
+                      className="py-2 sm:py-1.5 px-2 rounded-sm text-xs font-bold btn-chess-green flex items-center justify-center gap-1 disabled:opacity-40 active:scale-95 cursor-pointer"
                     >
                       <span>Next</span>
                       <ChevronRight className="w-3.5 h-3.5" />
@@ -950,7 +960,7 @@ export default function AnalysisBoard({
 
           {/* TAB 2: MOVES TABLE */}
           {activeTab === 'moves' && (
-            <div className="h-[360px]">
+            <div className="h-[260px] sm:h-[360px]">
               <MoveHistory
                 moves={reviewData ? reviewData.classifiedMoves : moves}
                 currentMoveIndex={currentStep}
@@ -989,7 +999,7 @@ export default function AnalysisBoard({
             <button
               onClick={() => goToStep(currentStep - 1)}
               disabled={currentStep <= -1}
-              className="flex-1 py-2 px-3 rounded-sm text-xs font-semibold btn-chess-secondary flex items-center justify-center gap-1 disabled:opacity-40"
+              className="flex-1 py-2.5 sm:py-2 px-3 rounded-sm text-xs font-semibold btn-chess-secondary flex items-center justify-center gap-1 disabled:opacity-40 active:scale-95 cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" />
               <span>Previous</span>
@@ -997,14 +1007,14 @@ export default function AnalysisBoard({
             <button
               onClick={() => goToStep(currentStep + 1)}
               disabled={currentStep >= moves.length - 1}
-              className="flex-1 py-2 px-3 rounded-sm text-xs font-semibold btn-chess-secondary flex items-center justify-center gap-1 disabled:opacity-40"
+              className="flex-1 py-2.5 sm:py-2 px-3 rounded-sm text-xs font-semibold btn-chess-secondary flex items-center justify-center gap-1 disabled:opacity-40 active:scale-95 cursor-pointer"
             >
               <span>Next</span>
               <ChevronRight className="w-4 h-4" />
             </button>
             <button
               onClick={() => goToStep(-1)}
-              className="py-2 px-3 rounded-sm text-xs font-semibold btn-chess-secondary flex items-center justify-center"
+              className="py-2.5 sm:py-2 px-3 rounded-sm text-xs font-semibold btn-chess-secondary flex items-center justify-center active:scale-95 cursor-pointer"
               title="Reset position"
             >
               <RotateCcw className="w-3.5 h-3.5" />

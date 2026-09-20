@@ -59,7 +59,7 @@ export default function Navbar({
             onClick={toggleSound}
             title={soundOn ? 'Mute sound effects' : 'Enable sound effects'}
             aria-label={soundOn ? 'Mute sound' : 'Enable sound'}
-            className="p-2 rounded-sm bg-theme-panel hover:bg-theme-btn text-theme-sec hover:text-white border border-theme-border transition-colors cursor-pointer"
+            className="p-2 rounded-sm bg-theme-panel hover:bg-theme-btn text-theme-sec hover:text-white border border-theme-border transition-all cursor-pointer active:scale-95"
           >
             {soundOn ? (
               <Volume2 className="w-4 h-4 text-theme-accent" />
@@ -72,7 +72,7 @@ export default function Navbar({
             onClick={onOpenThemeModal}
             title="Board & Site Themes"
             aria-label="Change Theme"
-            className="p-2 rounded-sm bg-theme-panel hover:bg-theme-btn text-theme-sec hover:text-white border border-theme-border transition-colors cursor-pointer"
+            className="p-2 rounded-sm bg-theme-panel hover:bg-theme-btn text-theme-sec hover:text-white border border-theme-border transition-all cursor-pointer active:scale-95"
           >
             <Settings className="w-4 h-4 text-theme-accent" />
           </button>

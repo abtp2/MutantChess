@@ -9,6 +9,7 @@ import PassAndPlay from '../components/PassAndPlay';
 import GameImporter from '../components/GameImporter';
 import OpeningsExplorer from '../components/OpeningsExplorer';
 import ThemeSelector from '../components/ThemeSelector';
+import BottomNav from '../components/BottomNav';
 import { Monitor, Users, FileText, BarChart2, BookOpen, X } from 'lucide-react';
 import {
   getSavedBoardTheme,
@@ -192,7 +193,7 @@ export default function Home() {
         </aside>
 
         {/* Main Workspace Area */}
-        <main className="flex-1 flex flex-col justify-start w-full py-2 sm:py-4 pb-6 min-w-0">
+        <main className="flex-1 flex flex-col justify-start w-full py-2 sm:py-4 pb-20 sm:pb-24 lg:pb-6 min-w-0">
           {currentView === 'ai' && (
             <PlayAI
               key={playAiOpening.fen ? `opening_${playAiOpening.fen}_${playAiOpening.moves.length}` : 'default_ai'}
@@ -237,6 +238,12 @@ export default function Home() {
           )}
         </main>
       </div>
+
+      {/* Mobile App Bottom Navigation Bar */}
+      <BottomNav
+        currentView={currentView}
+        onSelectView={setCurrentView}
+      />
 
       {/* Theme Modal */}
       <ThemeSelector

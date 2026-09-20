@@ -377,8 +377,8 @@ export default function GameImporter({ onSelectGameForAnalysis }) {
         {(activeTab === 'chesscom' || activeTab === 'lichess') && (
           <div className="space-y-4">
             {/* Modern Search Bar */}
-            <div className="relative flex items-center bg-theme-sub border border-theme-border rounded-sm p-1.5 transition-all focus-within:border-theme-accent focus-within:ring-1 focus-within:ring-theme-accent/30 shadow-xs">
-              <div className="pl-3.5 pr-2.5 flex items-center text-theme-muted shrink-0">
+            <div className="relative flex items-center bg-theme-sub border border-theme-border rounded-sm p-1 sm:p-1.5 transition-all focus-within:border-theme-accent focus-within:ring-1 focus-within:ring-theme-accent/30 shadow-xs">
+              <div className="pl-2.5 sm:pl-3.5 pr-1.5 sm:pr-2.5 flex items-center text-theme-muted shrink-0">
                 <Search className="w-4 h-4 text-theme-accent" />
               </div>
               <input
@@ -388,27 +388,28 @@ export default function GameImporter({ onSelectGameForAnalysis }) {
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                 placeholder={
                   activeTab === 'chesscom'
-                    ? 'Enter Chess.com username (e.g. hikaru, magnuscarlsen)...'
-                    : 'Enter Lichess username (e.g. DrNykterstein, penguingm1)...'
+                    ? 'Chess.com username...'
+                    : 'Lichess username...'
                 }
-                className="flex-1 bg-transparent border-none px-2 py-3 text-xs sm:text-sm text-white placeholder-theme-muted focus:outline-none"
+                className="flex-1 min-w-0 bg-transparent border-none px-1.5 sm:px-2 py-2 sm:py-2.5 text-xs sm:text-sm text-white placeholder-theme-muted focus:outline-none"
               />
               {username && (
                 <button
                   onClick={() => setUsername('')}
-                  className="p-1.5 text-theme-muted hover:text-white transition-colors cursor-pointer mr-1"
+                  className="p-1 text-theme-muted hover:text-white transition-colors cursor-pointer mr-1"
                   title="Clear"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-3.5 h-3.5" />
                 </button>
               )}
               <button
                 onClick={() => handleSearch()}
                 disabled={loading || !username.trim()}
-                className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-xs font-bold text-xs sm:text-sm btn-chess-green flex items-center gap-2 disabled:opacity-40 cursor-pointer shrink-0 transition-all"
+                className="px-3 sm:px-5 py-2 sm:py-2.5 rounded-xs font-bold text-xs sm:text-sm btn-chess-green flex items-center gap-1.5 sm:gap-2 disabled:opacity-40 cursor-pointer shrink-0 transition-all active:scale-95"
               >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-                <span>Fetch Games</span>
+                {loading ? <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" /> : <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+                <span className="hidden xs:inline sm:inline">Fetch Games</span>
+                <span className="xs:hidden sm:hidden">Fetch</span>
               </button>
             </div>
 
