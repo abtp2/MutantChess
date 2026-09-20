@@ -6,6 +6,7 @@ import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 import { BOARD_THEMES } from '../lib/themes';
 import { ChessPiece } from '../lib/chessPieces';
+import { X } from 'lucide-react';
 
 import ClassificationIcon from './ClassificationIcon';
 
@@ -246,9 +247,10 @@ function ChessBoardComponent({
               const pieceObj = chess.get(selectedSquare);
               const isPawn = pieceObj && pieceObj.type === 'p';
               const isPromotion =
-                isPawn &&
-                ((pieceObj.color === 'w' && square[1] === '8') ||
-                  (pieceObj.color === 'b' && square[1] === '1'));
+                Boolean(testMove.promotion) ||
+                (isPawn &&
+                  ((pieceObj.color === 'w' && square[1] === '8') ||
+                    (pieceObj.color === 'b' && square[1] === '1')));
 
               if (isPromotion) {
                 setPromotionMove({ from: selectedSquare, to: square });
@@ -271,10 +273,11 @@ function ChessBoardComponent({
         const pieceObj = chess.get(selectedSquare);
         if (pieceObj && pieceObj.color === friendlyColor) {
           const isPawn = pieceObj.type === 'p';
-          const isPromotion =
+          const canPossiblyPromote =
             isPawn &&
-            ((pieceObj.color === 'w' && square[1] === '8') ||
-              (pieceObj.color === 'b' && square[1] === '1'));
+            ((pieceObj.color === 'w' && selectedSquare[1] === '7' && square[1] === '8') ||
+              (pieceObj.color === 'b' && selectedSquare[1] === '2' && square[1] === '1'));
+          const isPromotion = canPossiblyPromote && Math.abs(selectedSquare.charCodeAt(0) - square.charCodeAt(0)) <= 1;
 
           if (onPremove) {
             onPremove({ from: selectedSquare, to: square, promotion: isPromotion ? 'q' : undefined });
@@ -327,21 +330,23 @@ function ChessBoardComponent({
       // Case A: LIVE MOVE (Player's turn)
       if (isPlayerTurn) {
         try {
-          const isPawn = pieceObj.type === 'p';
-          const isPromotion =
-            isPawn &&
-            ((pieceObj.color === 'w' && targetSquare[1] === '8') ||
-              (pieceObj.color === 'b' && targetSquare[1] === '1'));
-
-          if (isPromotion) {
-            setPromotionMove({ from: sourceSquare, to: targetSquare });
-            return true;
-          }
-
+          // Strictly verify move legality FIRST before any promotion triggers
           const test = new Chess(chess.fen());
           const testMove = test.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
           if (!testMove) {
             return false;
+          }
+
+          const isPawn = pieceObj.type === 'p';
+          const isPromotion =
+            Boolean(testMove.promotion) ||
+            (isPawn &&
+              ((pieceObj.color === 'w' && targetSquare[1] === '8') ||
+                (pieceObj.color === 'b' && targetSquare[1] === '1')));
+
+          if (isPromotion) {
+            setPromotionMove({ from: sourceSquare, to: targetSquare });
+            return true;
           }
 
           if (onMove) {
@@ -362,10 +367,11 @@ function ChessBoardComponent({
       }
 
       const isPawn = pieceObj.type === 'p';
-      const isPromotion =
+      const canPossiblyPromote =
         isPawn &&
-        ((pieceObj.color === 'w' && targetSquare[1] === '8') ||
-          (pieceObj.color === 'b' && targetSquare[1] === '1'));
+        ((pieceObj.color === 'w' && sourceSquare[1] === '7' && targetSquare[1] === '8') ||
+          (pieceObj.color === 'b' && sourceSquare[1] === '2' && targetSquare[1] === '1'));
+      const isPromotion = canPossiblyPromote && Math.abs(sourceSquare.charCodeAt(0) - targetSquare.charCodeAt(0)) <= 1;
 
       const premoveObj = {
         from: sourceSquare,
@@ -547,11 +553,32 @@ function ChessBoardComponent({
 
       {/* Promotion Choice Dialog */}
       {promotionMove && (
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center z-50 p-2 animate-fadeIn">
-          <div className="bg-theme-panel border-2 border-theme-accent rounded-sm p-3 sm:p-4 flex flex-col items-center gap-2.5 sm:gap-3 shadow-2xl max-w-[95vw]">
-            <span className="text-xs font-bold text-theme-text uppercase tracking-wider">
-              Choose Promotion Piece
-            </span>
+        <div
+          className="absolute inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center z-50 p-2 animate-fadeIn"
+          onClick={() => {
+            setPromotionMove(null);
+            setSelectedSquare(null);
+          }}
+        >
+          <div
+            className="bg-theme-panel border-2 border-theme-accent rounded-sm p-3 sm:p-4 flex flex-col items-center gap-2.5 sm:gap-3 shadow-2xl max-w-[95vw] relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between w-full gap-4">
+              <span className="text-xs font-bold text-theme-text uppercase tracking-wider">
+                Choose Promotion Piece
+              </span>
+              <button
+                onClick={() => {
+                  setPromotionMove(null);
+                  setSelectedSquare(null);
+                }}
+                className="text-theme-muted hover:text-white p-1 rounded-xs cursor-pointer transition-colors"
+                title="Cancel promotion"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
             <div className="flex gap-1.5 sm:gap-2.5">
               {[
                 { id: 'q', label: 'Queen' },

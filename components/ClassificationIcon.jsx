@@ -32,7 +32,7 @@ export const CLASSIFICATION_CONFIG = {
   excellent: {
     id: 'excellent',
     label: 'Excellent',
-    symbol: '✓',
+    symbol: '👍',
     bg: '#98bc52',
     border: '#ffffff',
     text: '#ffffff',
@@ -210,6 +210,16 @@ function renderSvgIcon(id) {
       );
 
     case 'excellent':
+      return (
+        <svg
+          viewBox="0 0 24 24"
+          className="w-full h-full"
+          fill="#ffffff"
+        >
+          <path d="M2 20h4V9H2v11zm20-10.5c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L13.17 1 6.8 7.37c-.37.37-.8.87-.8 1.43v10.4c0 .99.81 1.8 1.8 1.8h9.2c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2.43z" />
+        </svg>
+      );
+
     case 'good':
       return (
         <svg

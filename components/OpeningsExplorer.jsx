@@ -289,7 +289,7 @@ export default function OpeningsExplorer({
                 className="w-full py-2.5 sm:py-2 px-3 rounded-xs font-bold text-xs sm:text-sm btn-chess-green flex items-center justify-center gap-2 cursor-pointer shadow-xs active:scale-95"
               >
                 <BarChart2 className="w-4 h-4" />
-                <span>Analyze with Stockfish</span>
+                <span>Analyze</span>
               </button>
 
               <button
@@ -305,7 +305,7 @@ export default function OpeningsExplorer({
                 className="w-full py-2.5 sm:py-2 px-3 rounded-xs font-bold text-xs sm:text-sm btn-chess-secondary flex items-center justify-center gap-2 cursor-pointer shadow-xs active:scale-95"
               >
                 <Bot className="w-4 h-4 text-theme-accent" />
-                <span>Practice vs AI Bot</span>
+                <span>Play vs bot</span>
               </button>
             </div>
           </div>
