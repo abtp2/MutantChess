@@ -4,6 +4,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Chess } from 'chess.js';
 import ChessBoard from './ChessBoard';
+import EvalBar from './EvalBar';
+import { stockfishService } from '../lib/stockfishService';
 import { ALL_OPENINGS, OPENING_CATEGORIES } from '../lib/openingsDatabase';
 import {
   Search,
@@ -23,7 +25,7 @@ import {
 export default function OpeningsExplorer({
   onAnalyzeOpening,
   onPlayOpening,
-  boardThemeId = 'stone',
+  boardThemeId = 'glass',
 }) {
   const defaultOpening = useMemo(() => {
     return (
@@ -35,6 +37,7 @@ export default function OpeningsExplorer({
 
   const [selectedOpening, setSelectedOpening] = useState(defaultOpening);
   const [chess, setChess] = useState(() => new Chess(defaultOpening.fen));
+  const [evalScore, setEvalScore] = useState({ cp: 20, mate: null });
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [isFlipped, setIsFlipped] = useState(false);
@@ -42,6 +45,28 @@ export default function OpeningsExplorer({
   const [copiedFen, setCopiedFen] = useState(false);
   const [copiedPgn, setCopiedPgn] = useState(false);
   const [displayLimit, setDisplayLimit] = useState(60);
+
+  // Evaluate opening position
+  useEffect(() => {
+    let active = true;
+    const targetFen = selectedOpening?.fen || chess.fen();
+    stockfishService.evaluatePosition({
+      fen: targetFen,
+      depth: 8,
+      onUpdate: (res) => {
+        if (active && res) {
+          setEvalScore({ cp: res.cp, mate: res.mate });
+        }
+      },
+    }).then((res) => {
+      if (active && res) {
+        setEvalScore({ cp: res.cp, mate: res.mate });
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [selectedOpening?.fen]);
 
   // Client-safe board width
   const [userBoardWidth, setUserBoardWidth] = useState(null);
@@ -162,6 +187,14 @@ export default function OpeningsExplorer({
           {/* Chessboard View */}
           <div className="w-full flex justify-center">
             <ChessBoard
+              evalBar={
+                <EvalBar
+                  cp={evalScore.cp}
+                  mate={evalScore.mate}
+                  isFlipped={isFlipped}
+                  height={boardHeight}
+                />
+              }
               chess={chess}
               playerColor={null}
               isFlipped={isFlipped}

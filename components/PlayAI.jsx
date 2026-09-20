@@ -38,7 +38,7 @@ import {
 import BotAvatar from './BotAvatar';
 
 export default function PlayAI({
-  boardThemeId = 'stone',
+  boardThemeId = 'glass',
   onAnalyzeGame,
   initialFen = null,
   initialMoves = [],
@@ -105,6 +105,7 @@ export default function PlayAI({
   const [copiedPgn, setCopiedPgn] = useState(false);
   const [lastMove, setLastMove] = useState(initialData.lastMove);
   const [evalScore, setEvalScore] = useState({ cp: 0, mate: null });
+  const evalSeqRef = useRef(0);
   const [capturedWhite, setCapturedWhite] = useState(initialData.capturedWhite);
   const [capturedBlack, setCapturedBlack] = useState(initialData.capturedBlack);
   const [botMessage, setBotMessage] = useState(
@@ -143,6 +144,9 @@ export default function PlayAI({
       if (openingName) {
         setBotMessage(`Practicing ${openingName}. You play as ${data.playerColor === 'w' ? 'White' : 'Black'}!`);
       }
+      updateEval(data.chess.fen());
+    } else {
+      updateEval(chessRef.current ? chessRef.current.fen() : 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
     }
   }, [initialFen, initialMoves, openingName]);
   const [boardHeight, setBoardHeight] = useState(560);
@@ -529,9 +533,20 @@ export default function PlayAI({
   };
 
   const updateEval = async (fen) => {
+    const seq = ++evalSeqRef.current;
     try {
-      const evaluation = await stockfishService.evaluatePosition({ fen, depth: 8 });
-      setEvalScore({ cp: evaluation.cp, mate: evaluation.mate });
+      const evaluation = await stockfishService.evaluatePosition({
+        fen,
+        depth: 8,
+        onUpdate: (evalRes) => {
+          if (evalSeqRef.current === seq && evalRes) {
+            setEvalScore({ cp: evalRes.cp, mate: evalRes.mate });
+          }
+        },
+      });
+      if (evalSeqRef.current === seq && evaluation) {
+        setEvalScore({ cp: evaluation.cp, mate: evaluation.mate });
+      }
     } catch (e) {}
   };
 
@@ -612,6 +627,7 @@ export default function PlayAI({
       setHistoryMoves((prev) => [...prev, res]);
       setCurrentMoveIndex((prev) => prev + 1);
       playMoveAudio(res);
+      updateEval(next.fen());
 
       if (next.isGameOver()) {
         handleCancelPremoves();
@@ -717,6 +733,7 @@ export default function PlayAI({
     setCapturedWhite(capW);
     setCapturedBlack(capB);
     setEvalScore({ cp: 0, mate: null });
+    updateEval(fresh.fen());
     
     setPlayerColor(color);
     playerColorRef.current = color;
@@ -760,11 +777,13 @@ export default function PlayAI({
     if (index === -1) {
       setChess(new Chess());
       setLastMove(null);
+      updateEval('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
     } else {
       const targetMove = historyMoves[index];
       if (targetMove && targetMove.after) {
         setChess(new Chess(targetMove.after));
         setLastMove({ from: targetMove.from, to: targetMove.to });
+        updateEval(targetMove.after);
       } else {
         const c = new Chess();
         for (let i = 0; i <= index; i++) {
@@ -778,6 +797,7 @@ export default function PlayAI({
         if (historyMoves[index]) {
           setLastMove({ from: historyMoves[index].from, to: historyMoves[index].to });
         }
+        updateEval(c.fen());
       }
     }
   };
@@ -849,7 +869,7 @@ export default function PlayAI({
           {/* Board with integrated zero-gap Eval Bar */}
           <div className="w-full flex justify-center">
             <ChessBoard
-              evalBar={null}
+              evalBar={memoizedEvalBar}
               chess={chess}
               onMove={handleBoardMove}
               onPremove={handlePremove}

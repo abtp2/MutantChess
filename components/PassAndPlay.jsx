@@ -1,11 +1,13 @@
 // Professional Chess.com style 1 vs 1 Pass and Play with White-triggered clock
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Chess } from 'chess.js';
 import ChessBoard from './ChessBoard';
+import EvalBar from './EvalBar';
 import MoveHistory from './MoveHistory';
 import CapturedPieces from './CapturedPieces';
+import { stockfishService } from '../lib/stockfishService';
 import {
   playMoveSound,
   playCaptureSound,
@@ -16,10 +18,34 @@ import {
 import { RotateCcw, Flag, Handshake, BarChart2, RefreshCw, Trophy, ShieldAlert, Copy, Check, Minus, Plus } from 'lucide-react';
 
 export default function PassAndPlay({
-  boardThemeId = 'stone',
+  boardThemeId = 'glass',
   onAnalyzeGame,
 }) {
   const [chess, setChess] = useState(() => new Chess());
+  const [evalScore, setEvalScore] = useState({ cp: 0, mate: null });
+  const evalSeqRef = useRef(0);
+
+  const evaluateFen = useCallback((targetFen) => {
+    const seq = ++evalSeqRef.current;
+    stockfishService.evaluatePosition({
+      fen: targetFen,
+      depth: 8,
+      onUpdate: (evalRes) => {
+        if (evalSeqRef.current === seq && evalRes) {
+          setEvalScore({ cp: evalRes.cp, mate: evalRes.mate });
+        }
+      },
+    }).then((evalRes) => {
+      if (evalSeqRef.current === seq && evalRes) {
+        setEvalScore({ cp: evalRes.cp, mate: evalRes.mate });
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    evaluateFen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+  }, [evaluateFen]);
+
   const [historyMoves, setHistoryMoves] = useState([]);
   const [currentMoveIndex, setCurrentMoveIndex] = useState(-1);
   const [lastMove, setLastMove] = useState(null);
@@ -204,6 +230,9 @@ export default function PassAndPlay({
       setCurrentMoveIndex(newMoves.length - 1);
       playMoveAudio(res);
 
+      // Live Stockfish evaluation
+      evaluateFen(next.fen());
+
       if (autoFlip) {
         setIsFlipped(next.turn() === 'b');
       }
@@ -237,6 +266,8 @@ export default function PassAndPlay({
     setBlackTime(600);
     setIsTimerStarted(false);
     setIsFlipped(false);
+    setEvalScore({ cp: 0, mate: null });
+    evaluateFen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
   };
 
   const formatTime = (seconds) => {
@@ -251,11 +282,13 @@ export default function PassAndPlay({
     if (index === -1) {
       setChess(new Chess());
       setLastMove(null);
+      evaluateFen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
     } else {
       const targetMove = historyMoves[index];
       if (targetMove && targetMove.after) {
         setChess(new Chess(targetMove.after));
         setLastMove({ from: targetMove.from, to: targetMove.to });
+        evaluateFen(targetMove.after);
       } else {
         const c = new Chess();
         for (let i = 0; i <= index; i++) {
@@ -269,6 +302,7 @@ export default function PassAndPlay({
         if (historyMoves[index]) {
           setLastMove({ from: historyMoves[index].from, to: historyMoves[index].to });
         }
+        evaluateFen(c.fen());
       }
     }
   };
@@ -320,6 +354,14 @@ export default function PassAndPlay({
           {/* ChessBoard */}
           <div className="w-full flex justify-center">
             <ChessBoard
+              evalBar={
+                <EvalBar
+                  cp={evalScore.cp}
+                  mate={evalScore.mate}
+                  isFlipped={isFlipped}
+                  height={boardHeight}
+                />
+              }
               chess={chess}
               onMove={handleMove}
               playerColor={null} // Pass & play allows both sides

@@ -9,32 +9,64 @@ function EvalBarComponent({
   isFlipped = false,
   height,
 }) {
+  const safeCp = typeof cp === 'number' && !isNaN(cp) ? cp : 0;
+  const safeMate = typeof mate === 'number' && !isNaN(mate) ? mate : null;
+
   // Calculate percentage for White:
   // cp = 0 => 50%
-  // cp = +500 (or more) => ~90-95%
-  // cp = -500 (or less) => ~5-10%
+  // cp = +300 => ~75%
+  // cp = +500 => ~86%
+  // cp = -500 => ~14%
   let whitePercent = 50;
 
-  if (mate !== null) {
-    whitePercent = mate > 0 ? 100 : 0;
+  if (safeMate !== null) {
+    if (safeMate > 0) {
+      whitePercent = 100;
+    } else if (safeMate < 0) {
+      whitePercent = 0;
+    } else {
+      whitePercent = 50;
+    }
   } else {
-    // Sigmoid mapping for smooth scaling
-    const normalized = Math.max(-1500, Math.min(1500, cp));
-    whitePercent = 50 + (normalized / 1500) * 45;
-    whitePercent = Math.max(4, Math.min(96, whitePercent));
+    // Authentic chess winning probability sigmoid (Lichess/Chess.com curve)
+    const winProb = 1 / (1 + Math.exp(-0.00368208 * safeCp));
+    whitePercent = winProb * 100;
+    // Keep a minimum strip visible so both bars remain visible and text has room
+    whitePercent = Math.max(3.5, Math.min(96.5, whitePercent));
   }
 
-  // If board is flipped (Black at bottom), flip the eval bar orientation
-  const displayWhiteBottom = !isFlipped;
-  const bottomPercent = displayWhiteBottom ? whitePercent : (100 - whitePercent);
+  // Board orientation:
+  // When isFlipped is false: White is at bottom, Black is at top
+  // When isFlipped is true: White is at top, Black is at bottom
+  const topIsWhite = Boolean(isFlipped);
 
-  // Text label to show
+  // Determine which side is winning:
+  // > 50.5% => White advantage
+  // < 49.5% => Black advantage
+  // Otherwise => Equal position (0.0)
+  const isWhiteWinning = whitePercent > 50.5;
+  const isBlackWinning = whitePercent < 49.5;
+  const isDeadEqual = !isWhiteWinning && !isBlackWinning;
+
+  // Whichever side has advantage gets the label on their bar
+  // Top gets label if: (White winning AND top is White) OR (Black winning AND top is Black)
+  const showTopLabel = (isWhiteWinning && topIsWhite) || (isBlackWinning && !topIsWhite);
+  // Bottom gets label if: (White winning AND bottom is White) OR (Black winning AND bottom is Black)
+  const showBottomLabel = (isWhiteWinning && !topIsWhite) || (isBlackWinning && topIsWhite);
+
+  // Formatted score text
   let label = '0.0';
-  if (mate !== null) {
-    label = `M${Math.abs(mate)}`;
+  if (safeMate !== null) {
+    label = `M${Math.abs(safeMate)}`;
   } else {
-    const pawns = (Math.abs(cp) / 100).toFixed(1);
-    label = cp > 0 ? `+${pawns}` : cp < 0 ? `-${pawns}` : '0.0';
+    const pawns = (Math.abs(safeCp) / 100).toFixed(1);
+    if (pawns === '0.0') {
+      label = '0.0';
+    } else if (safeCp > 0) {
+      label = `+${pawns}`;
+    } else {
+      label = `-${pawns}`;
+    }
   }
 
   const heightStyle = height
@@ -43,48 +75,59 @@ function EvalBarComponent({
 
   return (
     <div
-      className="relative w-6 overflow-hidden bg-[#181715] border-r border-white/10 flex flex-col justify-between select-none shrink-0 transition-all duration-150"
-      style={{ height: heightStyle }}
+      className="relative w-6 sm:w-7 overflow-hidden bg-[#201e1b] border-r border-white/10 select-none shrink-0 self-stretch z-10"
+      style={{ height: heightStyle, minHeight: '100%' }}
     >
-      {/* Top half indicator (Black if standard, White if flipped) */}
-      <div 
-        className="w-full bg-[#201e1b] transition-all duration-300 ease-out flex items-start justify-center pt-1"
-        style={{ height: `${100 - bottomPercent}%` }}
-      >
-        {bottomPercent < 50 && (
-          <span className="text-[10px] font-mono font-bold text-gray-300 tracking-tighter">
+      {/* White bar filling whitePercent% from top or bottom */}
+      <div
+        className={`absolute left-0 right-0 bg-[#f1f1f1] transition-all duration-300 ease-out pointer-events-none ${
+          topIsWhite ? 'top-0' : 'bottom-0'
+        }`}
+        style={{ height: `${whitePercent}%` }}
+      />
+
+      {/* Tactical depth marker lines */}
+      <div className="absolute top-[25%] left-0 right-0 h-[1px] bg-white/10 pointer-events-none z-10" />
+      <div className="absolute top-1/2 left-0 right-0 h-[1px] bg-white/20 pointer-events-none z-10" />
+      <div className="absolute top-[75%] left-0 right-0 h-[1px] bg-black/20 pointer-events-none z-10" />
+
+      {/* Top score label */}
+      {showTopLabel && (
+        <div className="absolute top-1.5 left-0 right-0 flex justify-center z-20 pointer-events-none">
+          <span
+            className={`text-[10px] sm:text-[11px] font-mono font-bold tracking-tighter leading-none px-0.5 ${
+              topIsWhite ? 'text-[#111827]' : 'text-[#e5e7eb]'
+            }`}
+          >
             {label}
           </span>
-        )}
-      </div>
-
-      {/* Subtle tick markers for tactical depth */}
-      <div className="absolute top-[25%] left-0 right-0 h-[1px] bg-white/10 pointer-events-none" />
-      <div className="absolute top-1/2 left-0 right-0 h-[1px] bg-white/30 pointer-events-none" />
-      <div className="absolute top-[75%] left-0 right-0 h-[1px] bg-black/15 pointer-events-none" />
-
-      {/* Equality label if dead level */}
-      {bottomPercent === 50 && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <span className="text-[9px] font-mono font-bold text-gray-400">0.0</span>
         </div>
       )}
 
-      {/* Bottom half indicator (White if standard, Black if flipped) */}
-      <div 
-        className="w-full bg-[#f1f1f1] transition-all duration-300 ease-out flex items-end justify-center pb-1"
-        style={{ height: `${bottomPercent}%` }}
-      >
-        {bottomPercent > 50 && (
-          <span className="text-[10px] font-mono font-bold text-gray-900 tracking-tighter">
+      {/* Equality badge if dead level */}
+      {isDeadEqual && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+          <span className="text-[9px] font-mono font-bold text-gray-300 bg-black/60 px-1 py-0.5 rounded-[2px] leading-none">
+            0.0
+          </span>
+        </div>
+      )}
+
+      {/* Bottom score label */}
+      {showBottomLabel && (
+        <div className="absolute bottom-1.5 left-0 right-0 flex justify-center z-20 pointer-events-none">
+          <span
+            className={`text-[10px] sm:text-[11px] font-mono font-bold tracking-tighter leading-none px-0.5 ${
+              topIsWhite ? 'text-[#e5e7eb]' : 'text-[#111827]'
+            }`}
+          >
             {label}
           </span>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
 
 const EvalBar = React.memo(EvalBarComponent);
 export default EvalBar;
-

@@ -212,3 +212,17 @@ textarea {
 .animate-badge-pop {
   animation: badgePopIn 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
+
+/* Crisp, small board square box notation (a-h, 1-8) */
+[data-square] > span {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+}
+
+@media (max-width: 640px) {
+  [data-square] > span {
+    font-size: 8.5px !important;
+  }
+}
+

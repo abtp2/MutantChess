@@ -37,7 +37,7 @@ function ChessBoardComponent({
   onPremove,
   isFlipped = false,
   playerColor = 'w',
-  themeId = 'stone',
+  themeId = 'glass',
   lastMove = null,
   arrow = null,
   disabled = false,
@@ -56,7 +56,7 @@ function ChessBoardComponent({
   const [promotionMove, setPromotionMove] = useState(null);
 
   const boardTheme = useMemo(
-    () => BOARD_THEMES.find((t) => t.id === themeId) || BOARD_THEMES[0],
+    () => BOARD_THEMES.find((t) => t.id === themeId) || BOARD_THEMES.find((t) => t.id === 'glass') || BOARD_THEMES[0],
     [themeId]
   );
 
@@ -453,6 +453,30 @@ function ChessBoardComponent({
       },
       darkSquareStyle: { backgroundColor: boardTheme.dark },
       lightSquareStyle: { backgroundColor: boardTheme.light },
+      darkSquareNotationStyle: {
+        color: boardTheme.light,
+        fontWeight: '700',
+      },
+      lightSquareNotationStyle: {
+        color: boardTheme.dark,
+        fontWeight: '700',
+      },
+      alphaNotationStyle: {
+        fontSize: boardWidth < 420 ? '8.5px' : '10px',
+        fontWeight: '700',
+        lineHeight: 1,
+        bottom: 2,
+        right: 3,
+        userSelect: 'none',
+      },
+      numericNotationStyle: {
+        fontSize: boardWidth < 420 ? '8.5px' : '10px',
+        fontWeight: '700',
+        lineHeight: 1,
+        top: 2,
+        left: 3,
+        userSelect: 'none',
+      },
       squareStyles: customSquareStyles,
       arrows: customArrows,
       allowDrawingArrows: true,
@@ -480,6 +504,7 @@ function ChessBoardComponent({
     isFlipped,
     boardTheme.dark,
     boardTheme.light,
+    boardWidth,
     customSquareStyles,
     customArrows,
     disabled,

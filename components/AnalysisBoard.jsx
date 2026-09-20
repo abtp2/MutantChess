@@ -1,13 +1,13 @@
 // Authentic Chess.com style Deep Tactical Analysis & Game Review
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Chess } from 'chess.js';
 import ChessBoard from './ChessBoard';
 import EvalBar from './EvalBar';
 import MoveHistory from './MoveHistory';
 import AdvantageGraph from './AdvantageGraph';
-import { MOVE_CLASSIFICATIONS, analyzeFullGame } from '../lib/analysisEngine.js';
+import { MOVE_CLASSIFICATIONS, analyzeFullGame, uciToSan } from '../lib/analysisEngine.js';
 import { stockfishService } from '../lib/stockfishService.js';
 import {
   BarChart2,
@@ -26,6 +26,7 @@ import {
   Check,
   Minus,
   Plus,
+  GitBranch,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -39,21 +40,65 @@ export default function AnalysisBoard({
   initialMoves = [],
   initialFen = null,
   initialGameInfo = null,
-  boardThemeId = 'stone',
+  boardThemeId = 'glass',
   onOpenImporter,
 }) {
   const [gameInfo, setGameInfo] = useState(initialGameInfo);
-  const [moves, setMoves] = useState(initialMoves);
+  const [moves, setMoves] = useState(initialMoves || []);
+  const [originalMoves, setOriginalMoves] = useState(initialMoves || []);
   const [currentStep, setCurrentStep] = useState(() => (initialMoves && initialMoves.length > 0 ? initialMoves.length - 1 : -1));
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState(null);
   const [reviewData, setReviewData] = useState(null);
+  const [originalReviewData, setOriginalReviewData] = useState(null);
   const [liveEval, setLiveEval] = useState({ cp: 0, mate: null, depth: 0, bestMove: null, pv: '' });
   const [bestMoveArrow, setBestMoveArrow] = useState(null);
+  const evalSeqRef = useRef(0);
 
   useEffect(() => {
     setGameInfo(initialGameInfo);
-  }, [initialGameInfo]);
+    setMoves(initialMoves || []);
+    setOriginalMoves(initialMoves || []);
+    setCurrentStep(initialMoves && initialMoves.length > 0 ? initialMoves.length - 1 : -1);
+    setReviewData(null);
+    setOriginalReviewData(null);
+    setShowBestLine(false);
+  }, [initialMoves, initialGameInfo, initialFen]);
+
+  const isLineModified = React.useMemo(() => {
+    if (!originalMoves || originalMoves.length === 0) return (moves && moves.length > 0);
+    if (moves.length !== originalMoves.length) return true;
+    for (let i = 0; i < moves.length; i++) {
+      const m1 = moves[i].san || (moves[i].from ? `${moves[i].from}${moves[i].to}` : moves[i]);
+      const m2 = originalMoves[i].san || (originalMoves[i].from ? `${originalMoves[i].from}${originalMoves[i].to}` : originalMoves[i]);
+      if (m1 !== m2) return true;
+    }
+    return false;
+  }, [moves, originalMoves]);
+
+  const handleRevertToOriginal = () => {
+    setMoves(originalMoves);
+    const step = (originalMoves && originalMoves.length > 0) ? originalMoves.length - 1 : -1;
+    setCurrentStep(step);
+    const c = new Chess(initialFen || undefined);
+    if (originalMoves && originalMoves.length > 0) {
+      for (const m of originalMoves) {
+        let moveParam = m;
+        if (typeof m === 'object' && m !== null) {
+          if (m.san) moveParam = m.san;
+          else if (m.from && m.to) moveParam = { from: m.from, to: m.to, promotion: (m.promotion || 'q').toLowerCase() };
+        }
+        try {
+          c.move(moveParam);
+        } catch (e) {
+          break;
+        }
+      }
+    }
+    setChess(c);
+    setShowBestLine(false);
+    setReviewData(originalReviewData);
+  };
 
   // Fetch missing avatars for players if imported from chess.com or lichess
   useEffect(() => {
@@ -194,43 +239,133 @@ export default function AnalysisBoard({
   // Evaluate current position live with Stockfish or draw validated best move arrow
   useEffect(() => {
     let active = true;
+    const seq = ++evalSeqRef.current;
 
     const normalFen = fensHistory[currentStep + 1] || fensHistory[0];
     const rewindFen = fensHistory[currentStep] || fensHistory[0];
     const displayedFen = showBestLine && isMistakeOrMiss ? rewindFen : normalFen;
 
-    // Synchronize live evaluation bar
-    if (reviewData) {
+    // 1. Synchronize live evaluation from precomputed review if available and matching displayedFen
+    let hasReviewEval = false;
+    if (reviewData && reviewData.evaluations) {
       const evalIndex = showBestLine && isMistakeOrMiss ? currentStep : (currentStep + 1);
-      const ev = reviewData.evaluations[evalIndex] || reviewData.evaluations[currentStep + 1];
-      if (ev) setLiveEval(ev);
+      const ev = reviewData.evaluations[evalIndex];
+      if (ev && (!ev.fen || ev.fen === displayedFen)) {
+        setLiveEval(ev);
+        hasReviewEval = true;
+      }
     }
 
+    // 2. If no precomputed review evaluation available for this position, run live Stockfish evaluation
+    if (!hasReviewEval && !isAnalyzing) {
+      stockfishService.evaluatePosition({
+        fen: displayedFen,
+        depth: 8,
+        onUpdate: (streamed) => {
+          if (!active || evalSeqRef.current !== seq || !streamed) return;
+          setLiveEval(streamed);
+        },
+      }).then((res) => {
+        if (!active || evalSeqRef.current !== seq || !res) return;
+        setLiveEval(res);
+
+        // If reviewData is active and this move was added/branched, enrich its classification and eval!
+        if (reviewData && currentStep >= 0) {
+          setReviewData((prev) => {
+            if (!prev) return prev;
+            const updatedClassified = [...(prev.classifiedMoves || [])];
+            if (updatedClassified[currentStep] && !updatedClassified[currentStep].classification) {
+              const prevEval = prev.evaluations?.[currentStep]?.cp ?? 0;
+              const currEval = res.cp ?? 0;
+              const moveColor = updatedClassified[currentStep].color || 'w';
+
+              const evalLoss = moveColor === 'w' ? (prevEval - currEval) : (currEval - prevEval);
+
+              let classification = MOVE_CLASSIFICATIONS.good;
+              let coachExplanation = 'A solid exploratory move.';
+              if (res.bestMove && res.bestMove.startsWith(updatedClassified[currentStep].from + updatedClassified[currentStep].to)) {
+                classification = MOVE_CLASSIFICATIONS.best;
+                coachExplanation = 'The best move according to the engine!';
+              } else if (evalLoss <= 25) {
+                classification = MOVE_CLASSIFICATIONS.excellent;
+                coachExplanation = 'An excellent move, maintaining the initiative.';
+              } else if (evalLoss <= 70) {
+                classification = MOVE_CLASSIFICATIONS.good;
+                coachExplanation = 'A solid move, keeping balance.';
+              } else if (evalLoss <= 150) {
+                classification = MOVE_CLASSIFICATIONS.inaccuracy;
+                coachExplanation = 'An inaccuracy that allows your opponent some tactical counterplay.';
+              } else if (evalLoss <= 300) {
+                classification = MOVE_CLASSIFICATIONS.mistake;
+                coachExplanation = 'A mistake that compromises piece coordination.';
+              } else {
+                classification = MOVE_CLASSIFICATIONS.blunder;
+                coachExplanation = 'A blunder that drastically alters the evaluation.';
+              }
+
+              const pawns = (Math.abs(res.cp) / 100).toFixed(1);
+              const scoreDisplay = res.mate ? `M${Math.abs(res.mate)}` : (res.cp > 0 ? `+${pawns}` : `-${pawns}`);
+
+              updatedClassified[currentStep] = {
+                ...updatedClassified[currentStep],
+                classification,
+                coachExplanation,
+                scoreDisplay,
+                bestMove: res.bestMove,
+                bestMoveSan: uciToSan(fensHistory[currentStep] || fensHistory[0], res.bestMove),
+              };
+
+              const updatedEvals = [...(prev.evaluations || [])];
+              updatedEvals[currentStep + 1] = {
+                ...res,
+                fen: displayedFen,
+                whiteCp: res.cp,
+                whiteMate: res.mate,
+              };
+
+              return {
+                ...prev,
+                classifiedMoves: updatedClassified,
+                evaluations: updatedEvals,
+              };
+            }
+            return prev;
+          });
+        }
+
+        if (showBestLine && res.bestMove && res.bestMove.length >= 4) {
+          const from = res.bestMove.substring(0, 2);
+          const to = res.bestMove.substring(2, 4);
+          try {
+            const testBoard = new Chess(displayedFen);
+            const p = testBoard.get(from);
+            if (p && p.color === testBoard.turn()) {
+              setBestMoveArrow({ from, to, color: '#81b64c' });
+            }
+          } catch (e) {}
+        }
+      });
+    }
+
+    // 3. Best move arrow management without early returns to ensure cleanup runs reliably
     if (!showBestLine) {
       setBestMoveArrow(null);
-      return;
-    }
-
-    // 1. If showing best line for a mistake/miss/blunder:
-    // Arrow originates from the rewind position BEFORE the mistake was made
-    if (isMistakeOrMiss && currentClassifiedMove?.bestMove && currentClassifiedMove.bestMove.length >= 4) {
+    } else if (isMistakeOrMiss && currentClassifiedMove?.bestMove && currentClassifiedMove.bestMove.length >= 4) {
       const from = currentClassifiedMove.bestMove.substring(0, 2);
       const to = currentClassifiedMove.bestMove.substring(2, 4);
+      let arrowSet = false;
       try {
         const testBoard = new Chess(rewindFen);
         const p = testBoard.get(from);
         if (p && p.color === testBoard.turn()) {
           setBestMoveArrow({ from, to, color: '#81b64c' });
-          return;
+          arrowSet = true;
         }
       } catch (e) {}
-      setBestMoveArrow(null);
-      return;
-    }
-
-    // 2. If showing best line for a good/best move from reviewData:
-    if (reviewData && reviewData.evaluations[currentStep + 1]) {
+      if (!arrowSet) setBestMoveArrow(null);
+    } else if (reviewData && reviewData.evaluations && reviewData.evaluations[currentStep + 1]) {
       const ev = reviewData.evaluations[currentStep + 1];
+      let arrowSet = false;
       if (ev.bestMove && ev.bestMove.length >= 4) {
         const from = ev.bestMove.substring(0, 2);
         const to = ev.bestMove.substring(2, 4);
@@ -239,38 +374,19 @@ export default function AnalysisBoard({
           const p = testBoard.get(from);
           if (p && p.color === testBoard.turn()) {
             setBestMoveArrow({ from, to, color: '#81b64c' });
-            return;
+            arrowSet = true;
           }
         } catch (e) {}
       }
+      if (!arrowSet) setBestMoveArrow(null);
+    } else {
       setBestMoveArrow(null);
-      return;
     }
-
-    // 3. Fallback: live Stockfish engine evaluation
-    if (isAnalyzing) return;
-    stockfishService.evaluatePosition({ fen: displayedFen, depth: 10 }).then((res) => {
-      if (!active || !res) return;
-      setLiveEval(res);
-      if (res.bestMove && res.bestMove.length >= 4) {
-        const from = res.bestMove.substring(0, 2);
-        const to = res.bestMove.substring(2, 4);
-        try {
-          const testBoard = new Chess(displayedFen);
-          const p = testBoard.get(from);
-          if (p && p.color === testBoard.turn()) {
-            setBestMoveArrow({ from, to, color: '#81b64c' });
-            return;
-          }
-        } catch (e) {}
-      }
-      setBestMoveArrow(null);
-    });
 
     return () => {
       active = false;
     };
-  }, [currentStep, fensHistory, reviewData, showBestLine, isMistakeOrMiss, currentClassifiedMove]);
+  }, [currentStep, fensHistory, reviewData, showBestLine, isMistakeOrMiss, currentClassifiedMove, isAnalyzing]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -286,6 +402,7 @@ export default function AnalysisBoard({
 
   // Allow making exploratory moves on the analysis board
   const handleAnalysisMove = ({ from, to, promotion = 'q' }) => {
+    setShowBestLine(false);
     try {
       const next = new Chess(chess.fen());
       const res = next.move({ from, to, promotion });
@@ -293,8 +410,37 @@ export default function AnalysisBoard({
 
       const newMoves = [...moves.slice(0, currentStep + 1), res];
       setMoves(newMoves);
-      setCurrentStep(newMoves.length - 1);
+      const nextStep = newMoves.length - 1;
+      setCurrentStep(nextStep);
       setChess(next);
+
+      // If reviewData exists, synchronize classifiedMoves and evaluations with the new branch
+      if (reviewData) {
+        const prevClassified = (reviewData.classifiedMoves || []).slice(0, currentStep + 1);
+        const newClassifiedItem = {
+          index: nextStep,
+          color: res.color,
+          san: res.san,
+          from: res.from,
+          to: res.to,
+          fen: next.fen(),
+          prevFen: chess.fen(),
+          classification: null,
+          scoreDisplay: '...',
+          bestMove: null,
+          bestMoveSan: null,
+          coachExplanation: 'Analyzing this exploratory move...',
+        };
+        const updatedClassified = [...prevClassified, newClassifiedItem];
+        const updatedEvals = (reviewData.evaluations || []).slice(0, currentStep + 2);
+
+        setReviewData((prev) => ({
+          ...prev,
+          classifiedMoves: updatedClassified,
+          evaluations: updatedEvals,
+        }));
+      }
+
       return true;
     } catch (e) {
       return false;
@@ -354,9 +500,12 @@ export default function AnalysisBoard({
     try {
       const results = await analyzeFullGame(moves, (prog) => {
         setAnalysisProgress(prog);
-      }, 12);
+      }, { depth: 8, movetime: 150 });
 
       setReviewData(results);
+      if (!isLineModified) {
+        setOriginalReviewData(results);
+      }
       if (results && (results.stats?.w?.brilliant > 0 || results.stats?.b?.brilliant > 0)) {
         confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
       }
@@ -553,6 +702,27 @@ export default function AnalysisBoard({
               </div>
             </div>
           </div>
+
+          {/* Exploratory / Alternate Moves Line Banner */}
+          {isLineModified && (
+            <div 
+              className="w-full px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 rounded-sm flex items-center justify-between gap-2 shadow-xs transition-all text-xs"
+              style={{ width: '100%', maxWidth: boardHeight ? `${boardHeight + 24}px` : '100%' }}
+            >
+              <div className="flex items-center gap-1.5 text-amber-300 font-medium truncate">
+                <GitBranch className="w-3.5 h-3.5 shrink-0 text-amber-400" />
+                <span className="truncate">Exploratory line ({moves.length} moves)</span>
+              </div>
+              <button
+                onClick={handleRevertToOriginal}
+                className="px-2 py-0.5 rounded-xs bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/40 text-[11px] font-semibold flex items-center gap-1 shrink-0 transition-colors cursor-pointer active:scale-95"
+                title="Reset to the original imported game moves"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Reset to Imported</span>
+              </button>
+            </div>
+          )}
 
           {/* Board with integrated zero-gap Eval Bar */}
           <div className="w-full flex justify-center">
@@ -755,16 +925,6 @@ export default function AnalysisBoard({
             </button>
           </div>
 
-          {/* Interactive Advantage Graph Strip */}
-          {reviewData && (
-            <AdvantageGraph
-              evaluations={reviewData.evaluations}
-              classifiedMoves={reviewData.classifiedMoves}
-              currentStep={currentStep}
-              onSelectStep={goToStep}
-            />
-          )}
-
           {/* TAB 1: REVIEW */}
           {activeTab === 'review' && (
             <div className="space-y-3">
@@ -777,8 +937,17 @@ export default function AnalysisBoard({
                     className="w-full py-3 px-4 rounded-sm font-bold text-sm btn-chess-green flex items-center justify-center gap-2 shadow disabled:opacity-40"
                   >
                     <BarChart2 className="w-4 h-4" />
-                    <span>Review Game</span>
+                    <span>{isLineModified ? 'Review Exploratory Line' : 'Review Game'}</span>
                   </button>
+                  {isLineModified && (
+                    <button
+                      onClick={handleRevertToOriginal}
+                      className="w-full py-2 px-3 rounded-sm font-semibold text-xs btn-chess-secondary flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Reset to Original Moves</span>
+                    </button>
+                  )}
                   {moves.length === 0 && (
                     <p className="text-[11px] text-theme-muted">
                       Make moves or import a game to review
@@ -953,6 +1122,28 @@ export default function AnalysisBoard({
                       );
                     })}
                   </div>
+
+                  {/* Exploratory Line Action Buttons */}
+                  {isLineModified && (
+                    <div className="pt-2 border-t border-theme-border flex gap-2">
+                      <button
+                        onClick={handleStartReview}
+                        disabled={isAnalyzing}
+                        className="flex-1 py-2 px-3 rounded-sm font-semibold text-xs btn-chess-green flex items-center justify-center gap-1.5 shadow active:scale-95 cursor-pointer disabled:opacity-40"
+                      >
+                        <BarChart2 className="w-3.5 h-3.5" />
+                        <span>Re-Analyze Line</span>
+                      </button>
+                      <button
+                        onClick={handleRevertToOriginal}
+                        className="py-2 px-3 rounded-sm font-semibold text-xs btn-chess-secondary flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
+                        title="Reset to original imported game"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>Reset Original</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
